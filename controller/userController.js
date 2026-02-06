@@ -1,0 +1,330 @@
+import User from "../models/User.js";
+import bcrypt from "bcryptjs";
+import { generateToken } from "../lib/utils.js";
+import cloudinary from "../lib/cloudinary.js";
+import transporter from "../lib/mailer.js";
+
+
+//Sign up form
+export const signUp = async (req, res) => {
+
+    const { fullName, email, password, bio, phoneNo, designation } = req.body;
+
+    try {
+        if (!fullName || !email || !password || !phoneNo || !designation) {
+            return res.status(400).json({ message: "fields are missing." });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (user) {
+            return res.status(409).json({ message: "User already exists." });
+        }
+
+        //password hashing
+        const salt = await bcrypt.genSalt(10);
+
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = await User.create({
+            fullName,
+            email,
+            password: hashedPassword,
+            bio,
+            phoneNo,
+            designation,
+            phoneNo,
+            designation,
+        });
+
+        const token = generateToken(newUser._id);
+
+        res.status(200).json({ success: true, userData: newUser, token, message: "Account created successfully." });
+
+    } catch (error) {
+        console.log("create the user error", error);
+        return res.status(500).json({ message: "Internal server error." });
+    }
+}
+
+//login user 
+
+export const Login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const userData = await User.findOne({ email });
+
+        const isPassword = await bcrypt.compare(password, userData.password);
+
+        if (!isPassword) {
+            return res.status(409).json({ message: "Invalid credentials." });
+        }
+
+        const token = generateToken(userData._id);
+
+        res.status(200).json({ success: true, userData, token, message: "Login successful." });
+
+    } catch (error) {
+        console.log("login error", error);
+        res.status(404).json({ message: "User not found." });
+    }
+}
+
+//controller to check if user is authenticated 
+export const checkAuth = async (req, res) => {
+    res.status(200).json({ success: true, user: req.user });
+}
+
+//controller update user profile details
+export const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const updateData = {};
+
+        console.log("req body update profile:---", req.body);
+
+        // ===== basic fields =====
+        if (req.body.fullName) updateData.fullName = req.body.fullName;
+        if (req.body.email) updateData.email = req.body.email;
+        if (req.body.bio) updateData.bio = req.body.bio;
+        if (req.body.phoneNo) updateData.phoneNo = req.body.phoneNo;
+        if (req.body.designation) updateData.designation = req.body.designation;
+
+        // ===== years of experience =====
+        if (req.body.yearsOfExperience) {
+            updateData["profile.yearsOfExperience"] = req.body.yearsOfExperience;
+        }
+
+        if (req.body.introVideo) {
+            updateData["profile.introVideo"] = req.body.introVideo;
+        }
+
+        // ===== experience (parse JSON string) =====
+        if (req.body.experience) {
+            try {
+                const experienceData = JSON.parse(req.body.experience);
+                updateData["profile.experience"] = experienceData.map(exp => ({
+                    jobTitle: req.body.designation || "",
+                    hospital: exp.hospital || "",
+                    from: exp.duration?.from || "",
+                    to: exp.duration?.to || ""
+                }));
+            } catch (e) {
+                console.error("Error parsing experience:", e);
+            }
+        }
+
+        // ===== education (parse JSON string) =====
+        if (req.body.education) {
+            try {
+                const educationData = JSON.parse(req.body.education);
+                if (educationData.length > 0) {
+                    const edu = educationData[0]; // Take first education entry
+                    updateData["profile.education"] = {
+                        degree: edu.degree || "",
+                        university: edu.university || "",
+                        year: edu.year || ""
+                    };
+                }
+            } catch (e) {
+                console.error("Error parsing education:", e);
+            }
+        }
+
+        // ===== achievements (parse JSON string) =====
+        if (req.body.achievements) {
+            try {
+                const achievementsData = JSON.parse(req.body.achievements);
+                if (achievementsData.length > 0) {
+                    const ach = achievementsData[0]; // Take first achievement entry
+                    updateData["profile.achievements"] = {
+                        achievementsName: ach.name || "",
+                        issuingOrganization: ach.organization || "",
+                        achievementsImages: ""
+                    };
+                }
+            } catch (e) {
+                console.error("Error parsing achievements:", e);
+            }
+        }
+
+        // ===== interests (parse JSON string) =====
+        // if (req.body.interests) {
+        //     try {
+        //         const interestsData = JSON.parse(req.body.interests);
+        //         updateData["profile.Interests"] = interestsData;
+        //     } catch (e) {
+        //         console.error("Error parsing interests:", e);
+        //     }
+        // }
+
+        // ===== videos/mediaUpload (parse JSON string) =====
+        if (req.body.mediaUpload) {
+            try {
+                const videos = Array.isArray(req.body.mediaUpload)
+                    ? req.body.mediaUpload
+                    : [req.body.mediaUpload];
+
+                updateData["profile.mediaUpload"] = videos.map(v =>
+                    typeof v === "string" ? JSON.parse(v) : v
+                );
+            } catch (e) {
+                console.error("Error parsing videos:", e);
+            }
+        }
+
+        // ===== gallery images (AFTER videos) =====
+        if (req.files?.mediaUploadImages) {
+            const uploadedImages = [];
+
+            for (const file of req.files.mediaUploadImages) {
+                const upload = await cloudinary.uploader.upload(
+                    `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+                );
+
+                uploadedImages.push({
+                    type: "image",
+                    url: upload.secure_url,
+                    date: new Date().toISOString().split("T")[0]
+                });
+            }
+
+            updateData["profile.mediaUpload"] = [
+                ...(updateData["profile.mediaUpload"] || []),
+                ...uploadedImages
+            ];
+        }
+
+
+
+
+        // ===== profile picture upload =====
+        if (req.files?.profilepic && req.files.profilepic.length > 0) {
+            const file = req.files.profilepic[0];
+
+            const uploadResult = await cloudinary.uploader.upload(
+                `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+            );
+
+            updateData.profilepic = uploadResult.secure_url;
+        }
+
+
+        console.log("Final updateData:", updateData);
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({
+            success: true,
+            user: updatedUser,
+            message: "Profile updated successfully"
+        });
+
+    } catch (error) {
+        console.error("update profile error", error);
+        res.status(500).json({ message: error.message });
+        console.error("update profile error", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+
+//controller to handle forgot password
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // generate 6 digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000);
+
+        user.resetOtp = otp;
+        user.otpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+        user.otpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+        await user.save();
+
+
+        console.log("SMTP_USER:", process.env.SMTP_USER);
+        console.log("SMTP_PASS:", process.env.SMTP_PASS ? "SET" : "NOT SET");
+
+
+        const mailOptions = {
+            from: `DNA Support <${process.env.SMTP_USER}>`,
+            to: user.email,
+            subject: "Verify your email",
+            html: `<p>Your OTP is <b>${otp}</b></p>`
+        };
+
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({ message: "OTP sent to email " });
+    } catch (error) {
+        console.log("forget password error", error);
+        res.status(500).json({ message: "Internal server error." });
+    }
+}
+
+
+//verify otp controller
+export const verifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (
+            !user ||
+            user.resetOtp !== Number(otp) ||
+            user.otpExpire < Date.now()
+        ) {
+            return res.status(400).json({ message: "Invalid or expired OTP." });
+        }
+
+        res.status(200).json({ success: true, message: "OTP verified successfully." });
+
+    } catch (error) {
+        console.log("verify otp error", error);
+        res.status(500).json({ message: "Internal server error." });
+    }
+}
+
+
+//reset password controller
+export const resetPassword = async (req, res) => {
+    try {
+
+        const { email, newPassword } = req.body;
+
+        const user = await User.findOne({ email });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        user.password = hashedPassword;
+
+        user.resetOtp = null;
+        user.otpExpire = null;
+
+        await user.save();
+
+        res.status(200).json({ success: true, message: "Password reset successfully." });
+
+    } catch (error) {
+        console.log("reset password error", error);
+        res.status(500).json({ message: "Internal server error." });
+    }
+}
