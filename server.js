@@ -4,6 +4,8 @@ import {connectDB} from "./lib/db.js";
 import cors from "cors";
 import http from "http";
 import userRouter from "./routes/userRoutes.js";
+import { adminLogin } from "./controller/adminController.js";
+import adminRouter from "./routes/adminRoutes.js";
 
 
 
@@ -13,12 +15,13 @@ const server = http.createServer(app);
 app.use(express.json({limit: "4mb"}));
 app.use(cors())
 
-//routes 
+//routes  
 app.use("/api/status", (req, res) => {
   res.send("Server in live");
 });
 
-app.use("/api/auth", userRouter);
+app.use("/api/auth", userRouter);  
+app.use("/api/admin", adminRouter);
 
 //connect to mongoDB
 await connectDB();
