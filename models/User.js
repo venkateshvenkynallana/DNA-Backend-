@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema({
             type: String,
             default: ""
         },
-
+ 
         experience: [
             {
                 jobTitle: { type: String, default: "" },
