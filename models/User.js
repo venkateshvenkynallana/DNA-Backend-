@@ -4,7 +4,6 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
-        type: String,
         required: true,
         unique: true
     },
@@ -34,6 +33,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    hospitalName: {
+        type: String,
+        default: ""
+    },
 
     profile: {
         yearsOfExperience: {
@@ -48,7 +51,7 @@ const userSchema = new mongoose.Schema({
             type: String,
             default: ""
         },
-
+ 
         experience: [
             {
                 jobTitle: { type: String, default: "" },
@@ -65,14 +68,18 @@ const userSchema = new mongoose.Schema({
             year: { type: String, default: "" }
         },
 
-        achievements: {
-            achievementsName: { type: String, default: "" },
-            issuingOrganization: { type: String, default: "" }
-        },
-        Interests: {
-            type: [String],
-            default: []
-        },
+        achievements: [
+            {
+                achievementsName: { type: String, default: "" },
+                issuingOrganization: { type: String, default: "" },
+                achievementsImages: { type: String, default: "" }
+            }
+        ],
+
+        // Interests: {
+        //     type: [String],
+        //     default: []
+        // },
         mediaUpload: [
             {
                 type: { type: String }, // "video" | "image"

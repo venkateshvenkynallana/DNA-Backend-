@@ -33,8 +33,6 @@ export const signUp = async (req, res) => {
             bio,
             phoneNo,
             designation,
-            phoneNo,
-            designation,
         });
 
         const token = generateToken(newUser._id);
@@ -91,6 +89,7 @@ export const updateProfile = async (req, res) => {
         if (req.body.bio) updateData.bio = req.body.bio;
         if (req.body.phoneNo) updateData.phoneNo = req.body.phoneNo;
         if (req.body.designation) updateData.designation = req.body.designation;
+        if (req.body.hospitalName) updateData.hospitalName = req.body.hospitalName;
 
         // ===== years of experience =====
         if (req.body.yearsOfExperience) {
@@ -120,31 +119,28 @@ export const updateProfile = async (req, res) => {
         if (req.body.education) {
             try {
                 const educationData = JSON.parse(req.body.education);
-                if (educationData.length > 0) {
-                    const edu = educationData[0]; // Take first education entry
-                    updateData["profile.education"] = {
-                        degree: edu.degree || "",
-                        university: edu.university || "",
-                        year: edu.year || ""
-                    };
-                }
+
+                updateData["profile.education"] = educationData.map(edu => ({
+                    degree: edu.degree || "",
+                    university: edu.university || "",
+                    year: edu.year || ""
+                }));
             } catch (e) {
                 console.error("Error parsing education:", e);
             }
         }
 
+
         // ===== achievements (parse JSON string) =====
         if (req.body.achievements) {
             try {
                 const achievementsData = JSON.parse(req.body.achievements);
-                if (achievementsData.length > 0) {
-                    const ach = achievementsData[0]; // Take first achievement entry
-                    updateData["profile.achievements"] = {
-                        achievementsName: ach.name || "",
-                        issuingOrganization: ach.organization || "",
-                        achievementsImages: ""
-                    };
-                }
+
+                updateData["profile.achievements"] = achievementsData.map(ach => ({
+                    achievementsName: ach.name || "",
+                    issuingOrganization: ach.organization || "",
+                    achievementsImages: ""
+                }));
             } catch (e) {
                 console.error("Error parsing achievements:", e);
             }
@@ -220,11 +216,11 @@ export const updateProfile = async (req, res) => {
             { new: true, runValidators: true }
         );
 
-        res.status(200).json({
-            success: true,
-            user: updatedUser,
-            message: "Profile updated successfully"
-        });
+            res.status(200).json({
+                success: true,
+                user: updatedUser,
+                message: "Profile updated successfully"
+            });
 
     } catch (error) {
         console.error("update profile error", error);
