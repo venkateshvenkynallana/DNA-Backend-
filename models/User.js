@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema({
             type: String,
             default: ""
         },
- 
+
         experience: [
             {
                 jobTitle: { type: String, default: "" },
@@ -62,11 +62,14 @@ const userSchema = new mongoose.Schema({
         ],
 
 
-        education: {
-            degree: { type: String, default: "" },
-            university: { type: String, default: "" },
-            year: { type: String, default: "" }
-        },
+        education: [
+            {
+                degree: { type: String, default: "" },
+                university: { type: String, default: "" },
+                year: { type: String, default: "" }
+            }
+        ],
+
 
         achievements: [
             {
