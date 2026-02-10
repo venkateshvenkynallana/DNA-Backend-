@@ -4,7 +4,7 @@ import {connectDB} from "./lib/db.js";
 import cors from "cors";
 import http from "http";
 import userRouter from "./routes/userRoutes.js";
-import { adminLogin } from "./controller/adminController.js";
+import routes from "./routes/routes.js";
 import adminRouter from "./routes/adminRoutes.js";
 
 
@@ -22,6 +22,7 @@ app.use("/api/status", (req, res) => {
 
 app.use("/api/auth", userRouter);  
 app.use("/api/admin", adminRouter);
+app.use("/api", routes);
 
 //connect to mongoDB
 await connectDB();
