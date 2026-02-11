@@ -35,6 +35,59 @@ export const signUp = async (req, res) => {
             designation,
         });
 
+        //send mail to register user.......
+        const mailSend = {
+            from: `DNA support <${process.env.SMTP_USER}>`,
+            to: email,
+            subject: "🎉 Welcome to DNA – Your Account is Ready!",
+            html: `
+                <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 30px;">
+                    <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                        
+                        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+                            Welcome to DNA, ${newUser.fullName}! 🎉
+                        </h2>
+                        
+                        <p style="font-size: 15px; color: #555;">
+                            We're excited to have you on board. Your account has been successfully created.
+                        </p>
+
+                        <p style="font-size: 15px; color: #555;">
+                            You can now log in and start exploring all the features available to you.
+                        </p>
+
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="https://yourwebsite.com/login" 
+                            style="background-color: #4CAF50; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 14px;">
+                            Login to Your Account
+                            </a>
+                        </div>
+
+                        <hr style="margin: 20px 0;" />
+
+                        <p style="font-size: 14px; color: #888;">
+                            If you didn't create this account, please report it immediately.
+                        </p>
+
+                        <div style="text-align: center; margin-top: 15px;">
+                            <a href="https://yourwebsite.com/api/report-account/${newUser._id}" 
+                            style="background-color: #e74c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                            🚨 Report This Account
+                            </a>
+                        </div>
+
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0;" />
+
+                        <p style="font-size: 13px; color: #999;">
+                            © ${new Date().getFullYear()} DNA. All rights reserved.
+                        </p>
+
+                    </div>
+                </div>
+            `
+        }
+        await transporter.sendMail(mailSend);
+
         const token = generateToken(newUser._id);
 
         res.status(200).json({ success: true, userData: newUser, token, message: "Account created successfully." });
@@ -216,11 +269,11 @@ export const updateProfile = async (req, res) => {
             { new: true, runValidators: true }
         );
 
-            res.status(200).json({
-                success: true,
-                user: updatedUser,
-                message: "Profile updated successfully"
-            });
+        res.status(200).json({
+            success: true,
+            user: updatedUser,
+            message: "Profile updated successfully"
+        });
 
     } catch (error) {
         console.error("update profile error", error);
@@ -247,7 +300,6 @@ export const forgotPassword = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
 
         user.resetOtp = otp;
-        user.otpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
         user.otpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
         await user.save();

@@ -23,3 +23,19 @@ export const getAllUsers = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 }
+
+
+
+export const getUsersInUserDashboard = async(req, res) =>{
+    try {
+        const user = await User.countDocuments();
+
+        res.status(200).json({
+            success: true,
+            usersCount: user
+        });
+    } catch (error) {
+        console.log("get users in user dashboard error", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
