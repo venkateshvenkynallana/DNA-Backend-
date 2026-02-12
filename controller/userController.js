@@ -111,22 +111,39 @@ export const signUp = async (req, res) => {
 export const Login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
+        console.log({email,password})
+        if(!email||!password){
+            return res.status(400).json({message:"Plase enter all credentials"})
+        }
+        const expirationTime = Math.floor(Date.now()) + 600 * 60 * 1000;
         const userData = await User.findOne({ email });
-
+        console.log({userData})
+        if(!userData){
+            return res.status(400).json({message:"User not found"})
+        }
         const isPassword = await bcrypt.compare(password, userData.password);
 
         if (!isPassword) {
             return res.status(409).json({ message: "Invalid credentials." });
         }
 
-        const token = generateToken(userData._id);
+        console.log(
+            {userData}
+        )
 
-        res.status(200).json({ success: true, userData, token, message: "Login successful." });
+        const token = generateToken(userData);
+    //     res.cookie("loginToken", token, {
+    //     httpOnly: true,
+    //     secure: true,
+    //     sameSite: "none",
+    //     expires: new Date(expirationTime),
+    //     path :"/"
+    //   });
+       return res.status(200).json({ success: true,userData, token, message: "Login successful." });
 
     } catch (error) {
-        console.log("login error", error);
-        res.status(404).json({ message: "User not found." });
+        console.error("login error", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
     }
 }
 

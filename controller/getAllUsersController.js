@@ -1,10 +1,11 @@
 import User from "../models/User.js";
 import Admin from "../models/Admin.js";
+import { decodeToken } from "../lib/utils.js";
 
 export const getAllUsers = async (req, res) => {
     try {
-
-        const admin = await Admin.findById(req.user._id);
+        const{userId}=decodeToken(req)
+        const admin = await Admin.findById(userId);
 
         if (!admin) {
             return res.status(404).json({ message: "Admin not found" });

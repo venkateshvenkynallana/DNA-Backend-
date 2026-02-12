@@ -22,7 +22,7 @@ export const adminRegister = async( req, res) =>{
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const newAdmin = await admin.create({
-            name,
+            fullName:name,
             email,
             password: hashedPassword,
             role: "admin"
@@ -30,11 +30,11 @@ export const adminRegister = async( req, res) =>{
 
         const token = generateToken(newAdmin._id);
 
-        res.status(201).json({
+       return res.status(201).json({
             success: true,
             adminData: {
                 _id: newAdmin._id,
-                name: newAdmin.name,
+                name: newAdmin.fullName,
                 email: newAdmin.email,
                 role: newAdmin.role
             },
@@ -44,7 +44,7 @@ export const adminRegister = async( req, res) =>{
 
     } catch (error) {
         console.log("Admin registration error", error);
-        res.status(500).json({message: "Internal server error"});
+       return res.status(500).json({message: "Internal server error"});
     }
 }
 
@@ -69,13 +69,13 @@ export const adminLogin = async (req, res) => {
 
         //generate token
 
-        const token = generateToken(AdminMail._id);
+        const token = generateToken(AdminMail);
 
         res.status(200).json({
             success: true,
             adminData:{
                 _id: AdminMail._id,
-                name:AdminMail.name,
+                name:AdminMail.fullName,
                 email: AdminMail.email,
                 role: AdminMail.role,
             },
