@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const adminSchema = new mongoose.Schema(
     {
-        name:{
+        fullName:{
             type: String,
             default: ""
         },
@@ -18,10 +18,10 @@ const adminSchema = new mongoose.Schema(
         role: {
             type: String,
             default: "admin"
-        }
+        } 
     },{timestamps: true}
 );
 
-const admin =  mongoose.model("Admin", adminSchema);
+const Admin =  mongoose.model("Admin", adminSchema);
 
-export default admin;
+export default Admin;
