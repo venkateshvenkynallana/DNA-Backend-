@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
 import cloudinary from "../lib/cloudinary.js";
-import transporter from "../lib/mailer.js";
+import resend from "../lib/mailer.js";
 
 
 //Sign up form
@@ -35,9 +35,9 @@ export const signUp = async (req, res) => {
             designation,
         });
 
-        //send mail to register user.......
+        // mail sending logic 
         const mailSend = {
-            from: `DNA support <${process.env.SMTP_USER}>`,
+
             to: email,
             subject: "🎉 Welcome to DNA – Your Account is Ready!",
             html: `
@@ -57,7 +57,7 @@ export const signUp = async (req, res) => {
                         </p>
 
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="https://yourwebsite.com/login" 
+                            <a href="https://dna-frontend-eosin.vercel.app?fromEmail=true" 
                             style="background-color: #4CAF50; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 14px;">
                             Login to Your Account
                             </a>
@@ -86,7 +86,15 @@ export const signUp = async (req, res) => {
                 </div>
             `
         }
-        await transporter.sendMail(mailSend);
+
+
+        const response = await resend.emails.send({
+            from: "dna-support@dna.hi9.in",
+            to: email,
+            subject: mailSend.subject,
+            html: mailSend.html
+        });
+
 
         const token = generateToken(newUser._id);
 
@@ -310,14 +318,17 @@ export const forgotPassword = async (req, res) => {
 
 
         const mailOptions = {
-            from: `DNA Support <${process.env.SMTP_USER}>`,
-            to: user.email,
             subject: "Verify your email",
             html: `<p>Your OTP is <b>${otp}</b></p>`
         };
 
 
-        await transporter.sendMail(mailOptions);
+        await resend.emails.send({
+            from: "DNA Support <onboarding@resend.dev>",
+            to: user.email,
+            subject: mailOptions.subject,
+            html: mailOptions.html
+        })
 
         res.status(200).json({ message: "OTP sent to email " });
     } catch (error) {
