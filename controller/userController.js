@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
 import cloudinary from "../lib/cloudinary.js";
-import transporter from "../lib/mailer.js";
+import resend from "../lib/mailer.js";
 
 
 //Sign up form
@@ -33,9 +33,68 @@ export const signUp = async (req, res) => {
             bio,
             phoneNo,
             designation,
-            phoneNo,
-            designation,
         });
+
+        // mail sending logic 
+        const mailSend = {
+
+            to: email,
+            subject: "🎉 Welcome to DNA – Your Account is Ready!",
+            html: `
+                <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 30px;">
+                    <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                        
+                        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+                            Welcome to DNA, ${newUser.fullName}! 🎉
+                        </h2>
+                        
+                        <p style="font-size: 15px; color: #555;">
+                            We're excited to have you on board. Your account has been successfully created.
+                        </p>
+
+                        <p style="font-size: 15px; color: #555;">
+                            You can now log in and start exploring all the features available to you.
+                        </p>
+
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="https://dna-frontend-eosin.vercel.app?fromEmail=true" 
+                            style="background-color: #4CAF50; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 14px;">
+                            Login to Your Account
+                            </a>
+                        </div>
+
+                        <hr style="margin: 20px 0;" />
+
+                        <p style="font-size: 14px; color: #888;">
+                            If you didn't create this account, please report it immediately.
+                        </p>
+
+                        <div style="text-align: center; margin-top: 15px;">
+                            <a href="https://yourwebsite.com/api/report-account/${newUser._id}" 
+                            style="background-color: #e74c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                            🚨 Report This Account
+                            </a>
+                        </div>
+
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0;" />
+
+                        <p style="font-size: 13px; color: #999;">
+                            © ${new Date().getFullYear()} DNA. All rights reserved.
+                        </p>
+
+                    </div>
+                </div>
+            `
+        }
+
+
+        const response = await resend.emails.send({
+            from: "dna-support@dna.hi9.in",
+            to: email,
+            subject: mailSend.subject,
+            html: mailSend.html
+        });
+
 
         const token = generateToken(newUser._id);
 
@@ -91,6 +150,7 @@ export const updateProfile = async (req, res) => {
         if (req.body.bio) updateData.bio = req.body.bio;
         if (req.body.phoneNo) updateData.phoneNo = req.body.phoneNo;
         if (req.body.designation) updateData.designation = req.body.designation;
+        if (req.body.hospitalName) updateData.hospitalName = req.body.hospitalName;
 
         // ===== years of experience =====
         if (req.body.yearsOfExperience) {
@@ -120,31 +180,28 @@ export const updateProfile = async (req, res) => {
         if (req.body.education) {
             try {
                 const educationData = JSON.parse(req.body.education);
-                if (educationData.length > 0) {
-                    const edu = educationData[0]; // Take first education entry
-                    updateData["profile.education"] = {
-                        degree: edu.degree || "",
-                        university: edu.university || "",
-                        year: edu.year || ""
-                    };
-                }
+
+                updateData["profile.education"] = educationData.map(edu => ({
+                    degree: edu.degree || "",
+                    university: edu.university || "",
+                    year: edu.year || ""
+                }));
             } catch (e) {
                 console.error("Error parsing education:", e);
             }
         }
 
+
         // ===== achievements (parse JSON string) =====
         if (req.body.achievements) {
             try {
                 const achievementsData = JSON.parse(req.body.achievements);
-                if (achievementsData.length > 0) {
-                    const ach = achievementsData[0]; // Take first achievement entry
-                    updateData["profile.achievements"] = {
-                        achievementsName: ach.name || "",
-                        issuingOrganization: ach.organization || "",
-                        achievementsImages: ""
-                    };
-                }
+
+                updateData["profile.achievements"] = achievementsData.map(ach => ({
+                    achievementsName: ach.name || "",
+                    issuingOrganization: ach.organization || "",
+                    achievementsImages: ""
+                }));
             } catch (e) {
                 console.error("Error parsing achievements:", e);
             }
@@ -252,24 +309,22 @@ export const forgotPassword = async (req, res) => {
 
         user.resetOtp = otp;
         user.otpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
-        user.otpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
         await user.save();
 
 
-        console.log("SMTP_USER:", process.env.SMTP_USER);
-        console.log("SMTP_PASS:", process.env.SMTP_PASS ? "SET" : "NOT SET");
-
-
         const mailOptions = {
-            from: `DNA Support <${process.env.SMTP_USER}>`,
-            to: user.email,
             subject: "Verify your email",
             html: `<p>Your OTP is <b>${otp}</b></p>`
         };
 
 
-        await transporter.sendMail(mailOptions);
+        await resend.emails.send({
+            from: "dna-support@dna.hi9.in",
+            to: email,
+            subject: mailOptions.subject,
+            html: mailOptions.html
+        })
 
         res.status(200).json({ message: "OTP sent to email " });
     } catch (error) {

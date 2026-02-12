@@ -13,4 +13,6 @@ router.get("/getEvents",fetchEvents)
 router.post("/createEvent",createEvent)
 router.get("/users", protectAdminRoute, getAllUsers);
 
+router.get("/userscount", protectRoute, getUsersInUserDashboard);
+
 export default router;
