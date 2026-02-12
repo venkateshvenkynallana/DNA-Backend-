@@ -313,10 +313,6 @@ export const forgotPassword = async (req, res) => {
         await user.save();
 
 
-        console.log("SMTP_USER:", process.env.SMTP_USER);
-        console.log("SMTP_PASS:", process.env.SMTP_PASS ? "SET" : "NOT SET");
-
-
         const mailOptions = {
             subject: "Verify your email",
             html: `<p>Your OTP is <b>${otp}</b></p>`
@@ -324,8 +320,8 @@ export const forgotPassword = async (req, res) => {
 
 
         await resend.emails.send({
-            from: "DNA Support <onboarding@resend.dev>",
-            to: user.email,
+            from: "dna-support@dna.hi9.in",
+            to: email,
             subject: mailOptions.subject,
             html: mailOptions.html
         })
