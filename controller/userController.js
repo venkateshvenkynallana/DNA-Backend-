@@ -57,7 +57,7 @@ export const signUp = async (req, res) => {
                         </p>
 
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="https://dna-frontend-eosin.vercel.app?fromEmail=true" 
+                            <a href="https://dna-frontend-eosin.vercel.app?isLogin=true" 
                             style="background-color: #4CAF50; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 14px;">
                             Login to Your Account
                             </a>
@@ -70,7 +70,7 @@ export const signUp = async (req, res) => {
                         </p>
 
                         <div style="text-align: center; margin-top: 15px;">
-                            <a href="https://yourwebsite.com/api/report-account/${newUser._id}" 
+                            <a href="" 
                             style="background-color: #e74c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                             🚨 Report This Account
                             </a>
