@@ -28,11 +28,12 @@ export const getAllUsers = async (req, res) => {
 
 export const getUsersInUserDashboard = async(req, res) =>{
     try {
-        const user = await User.countDocuments();
+        const user = await User.find().select("-password");
 
         res.status(200).json({
             success: true,
-            usersCount: user
+            usersCount: user.length,
+            usersList: user
         });
     } catch (error) {
         console.log("get users in user dashboard error", error);
