@@ -115,12 +115,23 @@ export const Login = async (req, res) => {
         if(!email||!password){
             return res.status(400).json({message:"Plase enter all credentials"})
         }
-        const expirationTime = Math.floor(Date.now()) + 600 * 60 * 1000;
+
         const userData = await User.findOne({ email });
         console.log({userData})
+
         if(!userData){
             return res.status(400).json({message:"User not found"})
         }
+
+        //check if user is pending
+        if(userData.status === "pending"){
+            return res.status(403).json({message : "Your account is pending verification. Please wait for the verification process to complete."})
+        }
+        //check if user is blocked
+        if(userData.status === "blocked"){
+            return res.status(403).json({message: "Your account has been blocked. Please contact support."})
+        }
+
         const isPassword = await bcrypt.compare(password, userData.password);
 
         if (!isPassword) {

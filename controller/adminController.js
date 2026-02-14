@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import admin from "../models/Admin.js";
 import { generateToken } from "../lib/utils.js";
+import  user  from "../models/User.js";
 
 // create admin
 
@@ -85,5 +86,27 @@ export const adminLogin = async (req, res) => {
     } catch (error) {
         console.log("admin login error", error);
         res.status(500).json({ message: "Internal server error"});
+    }
+}
+
+//delete users admins controller
+export const deleteUser = async (req, res) => {
+    try {
+        const {id} = req.params
+        console.log("id in delete user", id)
+        if(!id){
+            return res.status(400).json({message: "User Id is Not present"})
+        }
+
+        const response = await user.deleteOne({
+            _id: id
+        })
+        console.log("response in delete user", response);
+
+        return res.status(200).json({message: "User Deleted..."})
+
+    } catch (error) {
+        console.log("Error in delete user controller", error);
+        return res.status(500).json({message: "Internal Server Error"});
     }
 }

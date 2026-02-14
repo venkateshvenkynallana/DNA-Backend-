@@ -98,6 +98,13 @@ const userSchema = new mongoose.Schema({
 
     otpExpire: Date,
 
+    status:{
+        type: String,
+        enum: ["verified", "pending", "blocked"],
+        default: "pending",
+        required: true
+    }
+
 }, { timestamps: true });
 
 const user = mongoose.model("User", userSchema);

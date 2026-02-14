@@ -8,6 +8,8 @@ import deleteEvent from "../controller/events/deleteEvent.js";
 import updateEvent from"../controller/events/updateEvent.js"
 import fetchAllEvents from "../controller/events/fetchAllEvents.js";
 import upload from "../middleware/multer.js";
+import { deleteUser } from "../controller/adminController.js";
+import  blockUser  from "../controller/admins/blockUser.js";
 
 export const router=express.Router()
 
@@ -25,5 +27,10 @@ router.get("/getAllEvents",protectUserRoute,fetchAllEvents)
 router.get("/users", protectAdminRoute, getAllUsers);
 
 router.get("/userscount", protectUserRoute, getUsersInUserDashboard);
+
+router.delete("/deleteUser/:id", protectAdminRoute, deleteUser);
+
+//route block the user by admin
+router.put("/blockUser/:id", protectAdminRoute , blockUser)
 
 export default router;
