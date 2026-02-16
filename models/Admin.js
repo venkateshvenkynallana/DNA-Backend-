@@ -21,8 +21,9 @@ const adminSchema = new mongoose.Schema(
             required: true
         },
         role: {
-            type: String,
-            default: "admin"
+            type: mongoose.Schema.Types.ObjectId,
+            default: "69906326f94bb4961368eaf9",
+            ref:"role"
         } 
     },{timestamps: true}
 );

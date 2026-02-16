@@ -27,15 +27,11 @@ export const protectAdminRoute = async (req, res, next) => {
         
         const{userId}=await decodeToken(req)
 
-
+        console.log("userId in protect admin route",userId)
         // Look in Admin collection, not User
         const adminUser = await Admin.findById(userId).select("-password");
         if (!adminUser) return res.status(404).json({ message: "Admin not found." });
-
-        // check role
-        if (adminUser.role !== "admin") {
-            return res.status(403).json({ message: "Access denied. Admins only." });
-        }
+        console.log("adminUser in adminPRotectroute",adminUser)
 
         // req.user = adminUser;
         next();
