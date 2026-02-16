@@ -1,25 +1,21 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
-import cloudinary from "../lib/cloudinary.js";
+import {v2 as cloudinary} from "cloudinary"
 import resend from "../lib/mailer.js";
-
+import {decrypt, encrypt, hashEmail} from "../lib/encrypt.js"
 
 //Sign up form
 export const signUp = async (req, res) => {
 
-    const { fullName, email, password, bio, phoneNo, designation } = req.body;
+    const { fullName, email, password, bio, phoneNo, designation,role } = req.body;
 
     try {
         if (!fullName || !email || !password || !phoneNo || !designation) {
             return res.status(400).json({ message: "fields are missing." });
         }
 
-        const user = await User.findOne({ $or:[
-            {email},{phoneNo}
-        ] });
-
-        console.log("user in signUp",user)
+        const user = await User.findOne({ $or:[{emailHash:hashEmail(email)},{phoneHash:hashEmail(phoneNo)}] });
 
         if (user) {
             return res.status(409).json({ message: "User already exists." });
@@ -32,11 +28,14 @@ export const signUp = async (req, res) => {
 
         const newUser = await User.create({
             fullName,
-            email,
+            email:encrypt(email),
             password: hashedPassword,
             bio,
-            phoneNo,
-            designation,
+            phoneNo:encrypt(phoneNo),
+            designation:encrypt(designation),
+            emailHash:hashEmail(email),
+            phoneHash:hashEmail(phoneNo),
+            role:"698f1f9718709952f015bb56"
         });
 
         // mail sending logic 
@@ -92,7 +91,7 @@ export const signUp = async (req, res) => {
         }
 
 
-        const response = await resend.emails.send({
+        const response = await resend.emails?.send({
             from: "dna-support@dna.hi9.in",
             to: email,
             subject: mailSend.subject,
@@ -120,7 +119,10 @@ export const Login = async (req, res) => {
             return res.status(400).json({message:"Plase enter all credentials"})
         }
 
-        const userData = await User.findOne({ email });
+        console.log("encrypted data email",email)
+        const expirationTime = Math.floor(Date.now()) + 600 * 60 * 1000;
+        const userData = await User.findOne({ emailHash:hashEmail(email) })
+                        .select("-emailHash").select("-paymentRefId").select("-paymentRefImg");
         console.log({userData})
 
         if(!userData){
@@ -139,13 +141,16 @@ export const Login = async (req, res) => {
         const isPassword = await bcrypt.compare(password, userData.password);
 
         if (!isPassword) {
-            return res.status(409).json({ message: "Invalid credentials." });
+            return res.status(401).json({ message: "Invalid credentials." });
         }
 
-        console.log(
+        
+        userData.email=decrypt(userData.email)
+        userData.phoneNo=decrypt(userData.phoneNo)
+        userData.designation=decrypt(userData.designation)
+console.log(
             {userData}
         )
-
         const token = generateToken(userData);
     //     res.cookie("loginToken", token, {
     //     httpOnly: true,
@@ -157,7 +162,7 @@ export const Login = async (req, res) => {
        return res.status(200).json({ success: true,userData, token, message: "Login successful." });
 
     } catch (error) {
-        console.error("login error", error.message);
+        console.error("login error in login function", error.message);
         res.status(500).json({ message: "Internal Server Error" });
     }
 }
