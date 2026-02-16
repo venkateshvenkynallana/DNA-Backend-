@@ -6,12 +6,15 @@ async function deleteEvent(req,res){
         const {id} = req?.params
         console.log("id in delete Event", id)
         if(!id){
-            return res.status(400).json({message:"event Id is Not present"})
+            return res.status(400).json({message:"Please Select the appropriate Event"})
         }
         const response=await EventModel.deleteOne({
             _id:id
         })
         console.log("response in delete Event",response)
+        if(response.deletedCount===0){
+            return res.status(404).json({message:"Event not Found"})
+        }
         return res.status(200).json({message:"Event Deleted!"})
 
 

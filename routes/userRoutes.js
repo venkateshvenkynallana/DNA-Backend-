@@ -1,16 +1,16 @@
 import express from "express";
 import { checkAuth, forgotPassword, Login, resetPassword, signUp, updateProfile, verifyOtp } from "../controller/userController.js";
-import { protectUserRoute } from "../middleware/auth.js";
 import upload from "../middleware/multer.js";
+import { getUsersInUserDashboard } from '../controller/getAllUsersController.js';
+import fetchAllEvents from "../controller/events/fetchAllEvents.js";
+import { accessCheck } from "../middleware/accessCheck.js";
 
 const userRouter = express.Router();
 
 //user routes 
-userRouter.post("/signup", signUp);
-userRouter.post("/login", Login)
+
 userRouter.put(
     "/update-profile",
-    protectUserRoute,
     upload.fields([
         { name: "profilepic", maxCount: 1 },
         { name: "mediaUploadImages", maxCount: 10 }
@@ -18,11 +18,14 @@ userRouter.put(
     updateProfile
 );
 
-userRouter.get("/check", protectUserRoute, checkAuth);
+userRouter.get("/check", checkAuth);
 
 //reset password routes
-userRouter.post("/forget-password", forgotPassword);
-userRouter.post("/verify-otp", verifyOtp);
-userRouter.post("/reset-password", resetPassword)
+
+
+
+userRouter.get("/userscount", getUsersInUserDashboard);
+userRouter.get("/getAllEvents",accessCheck("events:read"),fetchAllEvents)
+
 
 export default userRouter;

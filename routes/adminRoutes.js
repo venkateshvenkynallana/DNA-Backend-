@@ -1,14 +1,46 @@
 import express from 'express';
-import { adminLogin, adminRegister } from '../controller/adminController.js';
+import { addRole, addUser, adminLogin, adminRegister, blockUser, deleteRole, deleteUser, getOneRole, getRoles, updateRole } from '../controller/adminController.js';
+import { adminAccessCheck } from '../middleware/accessCheck.js';
+import fetchEvents from '../controller/events/fetchEvents.js';
+import upload from '../middleware/multer.js';
+
+import { getAllUsers } from '../controller/getAllUsersController.js';
+import deleteEvent from "../controller/events/deleteEvent.js";
+import updateEvent from"../controller/events/updateEvent.js"
+import createEvent from '../controller/events/createEvent.js';
+
 
 const adminRouter = express.Router();
 
-//Admin registration route
 
-adminRouter.post("/register", adminRegister)
+adminRouter.post("/addUser",adminAccessCheck("admin:write"),addUser)
 
-//Admin login route
+adminRouter.get("/getRoles",adminAccessCheck("admin:read"),getRoles)
+adminRouter.get("/getRole:id",adminAccessCheck("admin:read"),getOneRole)
+// adminRouter.post("/addRole",adminAccessCheck("admin:write"),addRole)
+adminRouter.post("/addRole",addRole)
+adminRouter.put("/updateRole",adminAccessCheck("admin:update"),updateRole)
+adminRouter.delete("/deleteRole",adminAccessCheck("admin:delete"),deleteRole)
 
-adminRouter.post("/login", adminLogin);
+
+
+adminRouter.get("/getEvents",adminAccessCheck("events:read"),fetchEvents)
+adminRouter.post("/createEvent",adminAccessCheck("events:write"),
+            upload.fields([
+        { name: "banner", maxCount: 1 }]),createEvent)
+adminRouter.delete("/deleteEvent/:id",adminAccessCheck("events:delete"),deleteEvent)
+// adminRouter.delete("/deleteEvent/:id",deleteEvent)
+
+adminRouter.put("/updateEvent/:id",adminAccessCheck("events:update"),upload.fields([
+        { name: "banner", maxCount: 1 },
+    ]),updateEvent)
+
+
+adminRouter.get("/users",adminAccessCheck("users:read"), getAllUsers);
+adminRouter.delete("/deleteUser/:id", deleteUser);
+//route block the user by admin
+adminRouter.put("/blockUser/:id" , blockUser)
+
+
 
 export default adminRouter;

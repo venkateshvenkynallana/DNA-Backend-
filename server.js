@@ -2,19 +2,28 @@ import express from "express";
 import dotenv from "dotenv"
 dotenv.config()
 
-import {connectDB} from "./lib/db.js";
+import {connectDB, updateFields} from "./lib/db.js";
 import cors from "cors";
 import http from "http";
 import userRouter from "./routes/userRoutes.js";
-import routes from "./routes/routes.js";
+import routes from "./routes/authRoutes.js";
 import adminRouter from "./routes/adminRoutes.js";
-import { router } from "./routes/routes.js";
-
+import authRouter from "./routes/authRoutes.js";
+import crypto from "crypto"
+import cloudinarySetup from "./lib/cloudinary.js";
+import resendSetup from "./lib/mailer.js";
+import User from "./models/User.js";
+import { protectAdminRoute, protectUserRoute } from "./middleware/auth.js";
+// import { connectEncrypted, createKey } from "./lib/encrypt.js";
+// import dns from 'node:dns/promises';
+// dns.setServers(['1.1.1.1', '1.0.0.1']);
 
 const app = express();
 const server = http.createServer(app);
 
 
+cloudinarySetup();
+resendSetup();
 
 const allowedOrigins=[
   "https://dna-frontend-eosin.vercel.app",
@@ -28,6 +37,7 @@ app.use(cors({
 
 //connect to mongoDB
 await connectDB();
+// updateFields()
 
 
 app.use(express.json({limit: "4mb"}));
@@ -36,12 +46,11 @@ app.use(express.json({limit: "4mb"}));
 app.use("/api/status", (req, res) => {
   res.send("Server in live");
 });
-app.use("/api/auth", userRouter);  
-app.use("/api/admin", adminRouter);
-app.use("/api", routes);
+app.use("/api/user",protectUserRoute, userRouter);  
+app.use("/api/admin",protectAdminRoute, adminRouter);
+// app.use("/api", routes);
 
-app.use("/api",router)
-
+app.use("/api/auth",authRouter)
 
 
 const PORT = process.env.PORT ;

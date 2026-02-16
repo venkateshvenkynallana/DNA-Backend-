@@ -1,11 +1,15 @@
 import mongoose from "mongoose";
 
-
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
         unique: true
+    },
+    emailHash:{
+        type:String,
+        required:true,
+        unique:true
     },
     fullName: {
         type: String,
@@ -28,6 +32,11 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
 
+    },
+    phoneHash:{
+        type:String,
+        required:true,
+        unique:true
     },
     designation: {
         type: String,
@@ -92,6 +101,25 @@ const userSchema = new mongoose.Schema({
         ]
 
     },
+    role:{
+        type:mongoose.Schema.Types.ObjectId,
+        required:true,
+        default:null,
+        ref:"role"
+    },
+    paymentStatus:{     
+        type:String,
+        required:true,
+        default:"pending",
+    },
+    paymentRefId:{
+        type:String,
+        default:null
+    },
+    paymentRefImg:{
+        type:String,
+        default:null
+    },
     //otp for reset password
     resetOtp: Number,
 
@@ -107,6 +135,6 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-const user = mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
 
-export default user;
+export default User;

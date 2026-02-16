@@ -41,7 +41,10 @@ export const protectAdminRoute = async (req, res, next) => {
         next();
 
     } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
+    }
         console.log("protect admin route error", error.message);
-        res.status(401).json({ message: "Internal Server Error" });
+        res.status(403).json({ message:"Invalid Token" });
     }
 };
