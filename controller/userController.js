@@ -15,7 +15,11 @@ export const signUp = async (req, res) => {
             return res.status(400).json({ message: "fields are missing." });
         }
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ $or:[
+            {email},{phoneNo}
+        ] });
+
+        console.log("user in signUp",user)
 
         if (user) {
             return res.status(409).json({ message: "User already exists." });
@@ -57,7 +61,7 @@ export const signUp = async (req, res) => {
                         </p>
 
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="https://dna-frontend-eosin.vercel.app?fromEmail=true" 
+                            <a href="https://dna-frontend-eosin.vercel.app?isLogin=true" 
                             style="background-color: #4CAF50; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 14px;">
                             Login to Your Account
                             </a>
@@ -70,7 +74,7 @@ export const signUp = async (req, res) => {
                         </p>
 
                         <div style="text-align: center; margin-top: 15px;">
-                            <a href="https://yourwebsite.com/api/report-account/${newUser._id}" 
+                            <a href="" 
                             style="background-color: #e74c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                             🚨 Report This Account
                             </a>
@@ -96,12 +100,12 @@ export const signUp = async (req, res) => {
         });
 
 
-        const token = generateToken(newUser._id);
+        const token = generateToken(newUser);
 
         res.status(200).json({ success: true, userData: newUser, token, message: "Account created successfully." });
 
     } catch (error) {
-        console.log("create the user error", error);
+        console.log(" error in signUp", error);
         return res.status(500).json({ message: "Internal server error." });
     }
 }
@@ -115,12 +119,23 @@ export const Login = async (req, res) => {
         if(!email||!password){
             return res.status(400).json({message:"Plase enter all credentials"})
         }
-        const expirationTime = Math.floor(Date.now()) + 600 * 60 * 1000;
+
         const userData = await User.findOne({ email });
         console.log({userData})
+
         if(!userData){
             return res.status(400).json({message:"User not found"})
         }
+
+        //check if user is pending
+        if(userData.status === "pending"){
+            return res.status(403).json({message : "Your account is pending verification. Please wait for the verification process to complete."})
+        }
+        //check if user is blocked
+        if(userData.status === "blocked"){
+            return res.status(403).json({message: "Your account has been blocked. Please contact support."})
+        }
+
         const isPassword = await bcrypt.compare(password, userData.password);
 
         if (!isPassword) {
