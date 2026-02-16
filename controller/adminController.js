@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import admin from "../models/Admin.js";
+import Admin from "../models/Admin.js";
 import { decodeToken, generateToken } from "../lib/utils.js";
 import RoleModel from "../models/Roles.js";
 import User from "../models/User.js";
@@ -26,7 +26,7 @@ export const adminRegister = async( req, res) =>{
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newAdmin = await admin.create({
+        const newAdmin = await Admin.create({
             fullName:name,
             email:encrypt(email),
             emailHash:hashEmail(email),
@@ -57,10 +57,16 @@ export const adminRegister = async( req, res) =>{
 
 export const adminLogin = async (req, res) => {
     try{
-        const { email, password } = req.body;
+        const { email, password } = req?.body;
+
+
+        if(!email || !password) {
+            return res.status(400).json({message: "All fields are required"});
+        }
+
 
         //find admin
-        const AdminMail = await admin.findOne({emailHash:hashEmail(email)});
+        const AdminMail = await Admin.findOne({emailHash:hashEmail(email)});
 
         if(!AdminMail) {
             return res.status(404).json({message: "Admin not found"});
@@ -79,16 +85,28 @@ export const adminLogin = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            adminData:{
-                _id: AdminMail._id,
-                name:AdminMail.fullName,
-                email: AdminMail.email,
-                role: AdminMail.role,
-            },
             token,
             message: "Admin logged in successful."
         });
     } catch (error) {
+        console.log("admin login error", error);
+        res.status(500).json({ message: "Internal server error"});
+    }
+}
+
+export async function getHomePageData(req,res){
+    try{
+        const{userId}=decodeToken(req)
+       console.log("user id in getHomePageData",userId)
+            const user=await Admin?.findById(userId)?.populate("role")
+            const accessList=user?.role?.access
+            const membersCount=await User?.countDocuments();
+            console.log("accessList",accessList)
+            res.status(200).json({message:"Success",data:{
+               accessList ,membersCount
+            }})
+    }
+    catch (error) {
         console.log("admin login error", error);
         res.status(500).json({ message: "Internal server error"});
     }
@@ -292,7 +310,7 @@ export const blockUser = async( req, res) => {
 
 export async function getRoles(req,res){
     try{
-        const{userId}=decodeToke(req);
+        const{userId}=decodeToken(req);
         const roles=await RoleModel.find({createdBy:userId})
         console.log({roles})
         if(!roles.length){
@@ -301,7 +319,7 @@ export async function getRoles(req,res){
         return res.status(200).json({message:"Roles Fetch Successfull",data:roles})
     }
     catch(err){
-        console.log("Error in GetRoles",err.msg);
+        console.log("Error in GetRoles",err);
         return res.status(500).json({message:"Internal server Error"})
     }
 }
@@ -318,7 +336,7 @@ export async function getOneRole(req,res){
         return res.status(200).json({message:"Role Found",data:roleFound})
     }
     catch(err){
-        console.log("Error in GetOneRole",err.msg);
+        console.log("Error in GetOneRole",err);
         return res.status(500).json({message:"Internal server Error"})
 
     }

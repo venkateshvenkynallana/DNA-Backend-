@@ -10,7 +10,7 @@ const userRouter = express.Router();
 //user routes 
 
 userRouter.put(
-    "/update-profile",
+    "/update-profile",accessCheck("users:update"),
     upload.fields([
         { name: "profilepic", maxCount: 1 },
         { name: "mediaUploadImages", maxCount: 10 }
