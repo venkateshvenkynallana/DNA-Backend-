@@ -15,7 +15,11 @@ export const signUp = async (req, res) => {
             return res.status(400).json({ message: "fields are missing." });
         }
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ $or:[
+            {email},{phoneNo}
+        ] });
+
+        console.log("user in signUp",user)
 
         if (user) {
             return res.status(409).json({ message: "User already exists." });
@@ -96,12 +100,12 @@ export const signUp = async (req, res) => {
         });
 
 
-        const token = generateToken(newUser._id);
+        const token = generateToken(newUser);
 
         res.status(200).json({ success: true, userData: newUser, token, message: "Account created successfully." });
 
     } catch (error) {
-        console.log("create the user error", error);
+        console.log(" error in signUp", error);
         return res.status(500).json({ message: "Internal server error." });
     }
 }
