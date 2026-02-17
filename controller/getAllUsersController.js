@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import Admin from "../models/Admin.js";
 import { decodeToken } from "../lib/utils.js";
+import { decrypt } from "../lib/encrypt.js";
 
 export const getAllUsers = async (req, res) => {
     try {
@@ -12,11 +13,18 @@ export const getAllUsers = async (req, res) => {
         }
 
         const usersList = await User.find().select("-password");
-
+        const decryptedData = usersList.map((user) => {
+            return {
+                ...user.toObject(), // convert mongoose doc → plain object
+                email: decrypt(user.email),
+                phoneNo: decrypt(user.phoneNo),
+                designation:decrypt(user.designation)
+            };
+        });
         res.status(200).json({
             success: true,
             totalusers: usersList.length,
-            usersList
+            data:decryptedData
         })
 
     } catch (error) {

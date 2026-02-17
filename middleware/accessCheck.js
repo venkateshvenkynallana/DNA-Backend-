@@ -3,7 +3,6 @@ import Admin from "../models/Admin.js"
 import user from "../models/User.js"
 
 
-
 export  function accessCheck(permission){
     return async(req,res,next)=>{
         console.log({permission})
@@ -14,6 +13,7 @@ export  function accessCheck(permission){
             const hasPermission=()=>{
                 const roleAccess=roleDetails?.role?.access
                 console.log({roleAccess})
+                req.roleAccess=roleAccess
                 if(roleAccess?.includes("*")||roleAccess?.includes(permission)){
                     return true
                 }
@@ -44,6 +44,7 @@ export  function adminAccessCheck(permission){
             console.log("roleDetails",roleDetails)
             const hasPermission=()=>{
                 const roleAccess=roleDetails?.role?.access
+                req.roleAccess=roleAccess
                 console.log({roleAccess})
                 if(roleAccess?.includes("*")||roleAccess?.includes(permission)){
                     return true

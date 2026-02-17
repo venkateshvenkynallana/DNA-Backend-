@@ -1,5 +1,5 @@
 import express from 'express';
-import { addRole, addUser, adminLogin, adminRegister, blockUser, deleteRole, deleteUser, getOneRole, getRoles, updateRole } from '../controller/adminController.js';
+import { addRole, addUser, adminLogin, adminRegister, blockUser, deleteRole, deleteUser, getHomePageData, getOneRole, getRoles, updateRole } from '../controller/adminController.js';
 import { adminAccessCheck } from '../middleware/accessCheck.js';
 import fetchEvents from '../controller/events/fetchEvents.js';
 import upload from '../middleware/multer.js';
@@ -13,22 +13,24 @@ import createEvent from '../controller/events/createEvent.js';
 const adminRouter = express.Router();
 
 
-adminRouter.post("/addUser",adminAccessCheck("admin:write"),addUser)
+adminRouter.post("/addUser",adminAccessCheck("users:write"),addUser)
 
-adminRouter.get("/getRoles",adminAccessCheck("admin:read"),getRoles)
-adminRouter.get("/getRole:id",adminAccessCheck("admin:read"),getOneRole)
-// adminRouter.post("/addRole",adminAccessCheck("admin:write"),addRole)
+adminRouter.get("/getHomePageData",getHomePageData)
+
+adminRouter.get("/getRoles",adminAccessCheck("roles:read"),getRoles)
+adminRouter.get("/getRole:id",adminAccessCheck("roles:read"),getOneRole)
+// adminRouter.post("/addRole",adminAccessCheck("role:write"),addRole)
 adminRouter.post("/addRole",addRole)
-adminRouter.put("/updateRole",adminAccessCheck("admin:update"),updateRole)
-adminRouter.delete("/deleteRole",adminAccessCheck("admin:delete"),deleteRole)
+adminRouter.put("/updateRole",adminAccessCheck("roles:update"),updateRole)
+adminRouter.delete("/deleteRole",adminAccessCheck("roles:delete"),deleteRole)
 
 
 
-adminRouter.get("/getEvents",adminAccessCheck("events:read"),fetchEvents)
-adminRouter.post("/createEvent",adminAccessCheck("events:write"),
-            upload.fields([
-        { name: "banner", maxCount: 1 }]),createEvent)
-adminRouter.delete("/deleteEvent/:id",adminAccessCheck("events:delete"),deleteEvent)
+adminRouter.get("/getEvents", adminAccessCheck("events:read"), fetchEvents)
+adminRouter.post("/createEvent", adminAccessCheck("events:write"),
+    upload.fields([
+        { name: "banner", maxCount: 1 }]), createEvent)
+adminRouter.delete("/deleteEvent/:id", adminAccessCheck("events:delete"), deleteEvent)
 // adminRouter.delete("/deleteEvent/:id",deleteEvent)
 
 adminRouter.put("/updateEvent/:id",adminAccessCheck("events:update"),upload.fields([
@@ -37,9 +39,9 @@ adminRouter.put("/updateEvent/:id",adminAccessCheck("events:update"),upload.fiel
 
 
 adminRouter.get("/users",adminAccessCheck("users:read"), getAllUsers);
-adminRouter.delete("/deleteUser/:id", deleteUser);
+adminRouter.delete("/deleteUser/:id",adminAccessCheck("users:delete"), deleteUser);
 //route block the user by admin
-adminRouter.put("/blockUser/:id" , blockUser)
+adminRouter.put("/blockUser/:id" ,adminAccessCheck("users:update"), blockUser)
 
 
 
