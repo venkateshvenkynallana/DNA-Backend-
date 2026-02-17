@@ -29,7 +29,10 @@ export const getAllUsers = async (req, res) => {
 
 export const getUsersInUserDashboard = async(req, res) =>{
     try {
-        const user = await User.find().select("-password");
+        const {userId} = decodeToken(req);
+        const user = await User.find(
+            {_id: {$ne: userId}}
+        ).select("-password");
 
         res.status(200).json({
             success: true,
