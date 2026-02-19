@@ -6,13 +6,13 @@ import { decrypt } from "../lib/encrypt.js";
 export const getAllUsers = async (req, res) => {
     try {
         const{userId}=decodeToken(req)
-        const admin = await Admin.findById(userId);
+        // const admin = await Admin.findById(userId);
 
-        if (!admin) {
-            return res.status(404).json({ message: "Admin not found" });
-        }
+        // if (!admin) {
+        //     return res.status(404).json({ message: "Admin not found" });
+        // }
 
-        const usersList = await User.find({status:"verified"}).select("-password");
+        const usersList = await User.find({status:"verified"}).populate("role").select("-password");
         const decryptedData = usersList.map((user) => {
             return {
                 ...user.toObject(), // convert mongoose doc → plain object

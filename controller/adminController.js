@@ -273,18 +273,53 @@ export async function getAllUsersByAdmin(req,res){
 export async function updateUser(req,res){
     try{
         const {userId}=decodeToken(req);
+        const {id, fullName, email, password, bio, phoneNo,roleId,dashboardAccess } = req.body;
+         const userData={
+            fullName,
+            email:encrypt(email),
+            emailHash:hashEmail(email),
+            phoneNo:encrypt(phoneNo),
+            phoneHash:hashEmail(phoneNo),
+            role:roleId
+        }
+        console.log("usersData in updateUser",userData)
+        const response=await User.updateOne({_id:id},{
+            $set:userData
+        })
+        let admResponse
+        if(response.matchedCount===0){
+             admResponse=await Admin.updateOne({_id:id},{
+           $set: userData
+        })        }
+       
+        if(response.matchedCount===0 && admResponse.matchedCount===0){
+            return res.status(404).json({message:"User Not found"})
+        }
+        console.log("respnseesss",response,admResponse)
+
+        return res.status(200).json({message:"User role updated Updated!"})
+    }
+    catch(err){
+        console.log("Error in updateUser",err.message)
+        return res.status(500).json({message:"Internal server Error"})
+    }
+}
+
+export async function updateMemberRole(req,res){
+    try{
+        const {userId}=decodeToken(req);
         const{id,roleId}=req.body
-        const response=await User.updateOne({_id,id},{
+        const response=await User.updateOne({_id:id},{
             role:roleId
         })
-        if(!response.matchedCount){
+        if(!(response.matchedCount)){
             return res.status(404).json({message:"User Not found"})
         }
 
         return res.status(200).json({message:"User role updated Updated!"})
     }
     catch(err){
-        console.log("Error in updateUser",err.message)
+        console.log("Error in updateMemberRole",err.message)
         return res.status(500).json({message:"Internal server Error"})
     }
 }
