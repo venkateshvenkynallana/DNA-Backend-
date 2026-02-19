@@ -12,7 +12,7 @@ export const getAllUsers = async (req, res) => {
             return res.status(404).json({ message: "Admin not found" });
         }
 
-        const usersList = await User.find().select("-password");
+        const usersList = await User.find({status:"verified"}).select("-password");
         const decryptedData = usersList.map((user) => {
             return {
                 ...user.toObject(), // convert mongoose doc → plain object
@@ -38,14 +38,21 @@ export const getAllUsers = async (req, res) => {
 export const getUsersInUserDashboard = async(req, res) =>{
     try {
         const {userId} = decodeToken(req);
-        const user = await User.find(
+        const users = await User.find(
             {_id: {$ne: userId}}
         ).select("-password");
-
+        const decryptedData = users.map((user) => {
+            return {
+                ...user.toObject(), // convert mongoose doc → plain object
+               email:(user?.email)?decrypt(user.email):null,
+                phoneNo:(user?.phoneNo)?decrypt(user.phoneNo):null,
+                designation:(user?.designation)?decrypt(user.designation):null
+            };  
+        });
+        
         res.status(200).json({
             success: true,
-            usersCount: user.length,
-            usersList: user
+            usersList: decryptedData
         });
     } catch (error) {
         console.log("get users in user dashboard error", error);

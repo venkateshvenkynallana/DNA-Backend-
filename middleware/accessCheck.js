@@ -20,10 +20,12 @@ export  function accessCheck(permission){
                 return false
             }
             console.log("hasPermission",hasPermission())
-            if(!hasPermission()){
-                return res.status(403).json({message:"You Are not authorised"})
+            if(hasPermission()){
+             next();
+             return;
             }
-            next()
+        return res.status(403).json({message:"You Are not authorised"})
+
 
         }
         catch(err){
