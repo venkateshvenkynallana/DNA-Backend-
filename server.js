@@ -13,6 +13,7 @@ import cloudinarySetup from "./lib/cloudinary.js";
 import resendSetup from "./lib/mailer.js";
 import User from "./models/User.js";
 import { protectAdminRoute, protectUserRoute } from "./middleware/auth.js";
+import connectRouter from "./routes/connectRoutes.js";
 // import { connectEncrypted, createKey } from "./lib/encrypt.js";
 import dns from 'node:dns/promises';
 import { socketSetup } from "./lib/socket.js";
@@ -50,6 +51,9 @@ app.use("/api/status", (req, res) => {
 app.use("/api/user",protectUserRoute, userRouter);  
 app.use("/api/admin",protectAdminRoute, adminRouter);
 // app.use("/api", routes);
+
+//connect network route
+app.use("/api/connections", connectRouter)
 
 app.use("/api/auth",authRouter)
 

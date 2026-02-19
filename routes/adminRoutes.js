@@ -8,6 +8,8 @@ import { getAllUsers } from '../controller/getAllUsersController.js';
 import deleteEvent from "../controller/events/deleteEvent.js";
 import updateEvent from"../controller/events/updateEvent.js"
 import createEvent from '../controller/events/createEvent.js';
+import { getPaymentDetails } from '../controller/payments/getPaymentDetails.js';
+import { paymentNotification, verifyPaymentDetails } from '../controller/payments/paymentController.js';
 
 
 const adminRouter = express.Router();
@@ -41,6 +43,14 @@ adminRouter.get("/users",adminAccessCheck("members:read"), getAllUsers);
 //route block the user by admin
 adminRouter.put("/blockUser/:id" ,adminAccessCheck("members:update"), blockUser)
 
+//route for fetch payment user details
+adminRouter.get("/payment", getPaymentDetails)
+
+//admin verified the user
+adminRouter.put("/:userId", verifyPaymentDetails)
+
+//admin send mail user
+adminRouter.put("/mail/:userId", paymentNotification)
 
 
 // routes for users in admin for adding roles

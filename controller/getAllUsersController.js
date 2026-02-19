@@ -37,7 +37,10 @@ export const getAllUsers = async (req, res) => {
 
 export const getUsersInUserDashboard = async(req, res) =>{
     try {
-        const users = await User.find().select("-password");
+        const {userId} = decodeToken(req);
+        const users = await User.find(
+            {_id: {$ne: userId}}
+        ).select("-password");
         const decryptedData = users.map((user) => {
             return {
                 ...user.toObject(), // convert mongoose doc → plain object
