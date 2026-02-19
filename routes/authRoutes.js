@@ -1,7 +1,7 @@
 import express from "express";
 import { adminLogin, adminRegister } from "../controller/adminController.js";
 import { forgotPassword, Login, resetPassword, signUp, verifyOtp } from "../controller/userController.js";
-import { paymentController } from "../controller/payments/paymentController.js";
+import { getPaymentUser, paymentController } from "../controller/payments/paymentController.js";
 import upload from "../middleware/multer.js";
 
 
@@ -27,6 +27,9 @@ authRouter.post("/reset-password", resetPassword)
 authRouter.post("/payment/:userId", upload.fields([
     { name: "paymentRefImg", maxCount: 1 }
 ]), paymentController);
+
+//user get the email
+authRouter.get("/getUserDetails", getPaymentUser)
 
 // router.get("/getEvents",protectAdminRoute,accessCheck("events:read"),fetchEvents)
 // router.post("/createEvent",protectAdminRoute,accessCheck("events:write"),upload.fields([

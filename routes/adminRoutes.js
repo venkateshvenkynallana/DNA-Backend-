@@ -47,7 +47,7 @@ adminRouter.put("/blockUser/:id" ,adminAccessCheck("members:update"), blockUser)
 adminRouter.get("/payment", getPaymentDetails)
 
 //admin verified the user
-adminRouter.put("/:userId", verifyPaymentDetails)
+adminRouter.put("/verify/:userId", verifyPaymentDetails)
 
 //admin send mail user
 adminRouter.put("/mail/:userId", paymentNotification)
