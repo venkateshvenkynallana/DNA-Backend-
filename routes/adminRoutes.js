@@ -1,5 +1,5 @@
 import express from 'express';
-import { addRole, addUser, adminLogin, adminRegister, blockUser, deleteRole, deleteUser, getAllUsersByAdmin, getHomePageData, getOneRole, getRoles, updateRole, updateUser } from '../controller/adminController.js';
+import { addRole, addUser, adminLogin, adminRegister, blockUser, deleteRole, deleteUser, getAllUsersByAdmin, getHomePageData, getOneRole, getRoles, updateMemberRole, updateRole, updateUser } from '../controller/adminController.js';
 import { adminAccessCheck } from '../middleware/accessCheck.js';
 import fetchEvents from '../controller/events/fetchEvents.js';
 import upload from '../middleware/multer.js';
@@ -42,22 +42,25 @@ adminRouter.put("/updateEvent/:id",adminAccessCheck("events:update"),upload.fiel
 adminRouter.get("/users",adminAccessCheck("members:read"), getAllUsers);
 //route block the user by admin
 adminRouter.put("/blockUser/:id" ,adminAccessCheck("members:update"), blockUser)
-
-//route for fetch payment user details
-adminRouter.get("/payment", getPaymentDetails)
-
-//admin verified the user
-adminRouter.put("/verify/:userId", verifyPaymentDetails)
-
-//admin send mail user
-adminRouter.put("/mail/:userId", paymentNotification)
-
+adminRouter.patch("/updateMemberRole",adminAccessCheck("members:update"),updateMemberRole)
 
 // routes for users in admin for adding roles
 
 adminRouter.get("/getAllUsersByAdmin",adminAccessCheck("users:read"),getAllUsersByAdmin)
 adminRouter.post("/addUser",adminAccessCheck("users:write"),addUser)
 adminRouter.delete("/deleteUser/:id",adminAccessCheck("users:delete"), deleteUser);
-adminRouter.patch("/updateUser",adminAccessCheck("users:update"),updateUser)
+adminRouter.put("/updateUser",adminAccessCheck("users:update"),updateUser)
+
+
+
+//route for fetch payment user details
+adminRouter.get("/payment",adminAccessCheck("payments:read"), getPaymentDetails)
+
+//admin send mail user
+adminRouter.put("/mail/:userId",adminAccessCheck("payments:update"), paymentNotification)
+
+//admin verified the user
+adminRouter.put("/verify/:userId",adminAccessCheck("payments:update"), verifyPaymentDetails)
+
 
 export default adminRouter;
