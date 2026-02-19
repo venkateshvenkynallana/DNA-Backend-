@@ -16,9 +16,24 @@ const adminSchema = new mongoose.Schema(
             required: true,
             unique: true
         },
+        phoneNo:{
+            type:String,
+            required:true,
+            default:null
+        },
+        phoneHash:{
+            type:String,
+            required:true,
+            default:null
+        },
         password: {
             type: String,
             required: true
+        },
+        createdBy:{
+            type:mongoose.Schema.Types.ObjectId,
+            required:true,
+            ref:"admin"
         },
         role: {
             type: mongoose.Schema.Types.ObjectId,

@@ -1,6 +1,5 @@
 import express from "express";
-import dotenv from "dotenv"
-dotenv.config()
+
 
 import {connectDB, updateFields} from "./lib/db.js";
 import cors from "cors";
@@ -15,8 +14,9 @@ import resendSetup from "./lib/mailer.js";
 import User from "./models/User.js";
 import { protectAdminRoute, protectUserRoute } from "./middleware/auth.js";
 // import { connectEncrypted, createKey } from "./lib/encrypt.js";
-// import dns from 'node:dns/promises';
-// dns.setServers(['1.1.1.1', '1.0.0.1']);
+import dns from 'node:dns/promises';
+import { socketSetup } from "./lib/socket.js";
+dns.setServers(['1.1.1.1', '1.0.0.1']);
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +24,7 @@ const server = http.createServer(app);
 
 cloudinarySetup();
 resendSetup();
+// socketSetup(server)
 
 const allowedOrigins=[
   "https://dna-frontend-eosin.vercel.app",

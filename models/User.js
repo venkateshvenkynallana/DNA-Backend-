@@ -107,10 +107,11 @@ const userSchema = new mongoose.Schema({
         default:null,
         ref:"role"
     },
-    paymentStatus:{     
-        type:String,
+    createdBy:{
+        type:mongoose.Schema.Types.ObjectId,
         required:true,
-        default:"pending",
+        default:null,
+        ref:"admin"
     },
     paymentRefId:{
         type:String,

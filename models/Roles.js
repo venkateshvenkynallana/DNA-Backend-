@@ -5,7 +5,9 @@ const schema=new Schema({
     roleName:{
         type:String,
         required:true,
-        unique:true
+    },
+    description:{
+        type:String
     },
     createdBy:{
         type:String,

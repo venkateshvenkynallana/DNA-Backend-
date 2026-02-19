@@ -3,9 +3,10 @@ import Admin from "../models/Admin.js";
 import { decodeToken, generateToken } from "../lib/utils.js";
 import RoleModel from "../models/Roles.js";
 import User from "../models/User.js";
-import resend from "../lib/mailer.js";
+import resend, { resendSetup } from "../lib/mailer.js";
 // import user from "../models/User.js";
-import { encrypt, hashEmail } from "../lib/encrypt.js";
+import { decrypt, encrypt, hashEmail } from "../lib/encrypt.js";
+import mongoose from "mongoose";
  
 // create admin
 
@@ -69,14 +70,14 @@ export const adminLogin = async (req, res) => {
         const AdminMail = await Admin.findOne({emailHash:hashEmail(email)});
 
         if(!AdminMail) {
-            return res.status(404).json({message: "Admin not found"});
+            return res.status(404).json({success:false,message: "Admin not found"});
         }
 
         //compare password
         const isPasswordMatch =  await bcrypt.compare(password, AdminMail.password);
 
         if(!isPasswordMatch) {
-            return res.status(401).json({message: "Invalid credentials"});
+            return res.status(401).json({success:false,message: "Invalid credentials"});
         }
 
         //generate token
@@ -99,11 +100,17 @@ export async function getHomePageData(req,res){
         const{userId}=decodeToken(req)
        console.log("user id in getHomePageData",userId)
             const user=await Admin?.findById(userId)?.populate("role")
+            console.log("user in getHomePgae",user)
             const accessList=user?.role?.access
-            const membersCount=await User?.countDocuments();
+
+            const members=await User?.find({});
+            const adminsCreated=await Admin?.find({createdBy:userId})
             console.log("accessList",accessList)
+            
+            const membersCreated=members?.filter(mem=>mem.createdBy===userId)
+            const noOfMemCreated=membersCreated?.length
             res.status(200).json({message:"Success",data:{
-               accessList ,membersCount
+               accessList ,membersCount:(members?.length-noOfMemCreated),usersCount:(adminsCreated?.length+noOfMemCreated)
             }})
     }
     catch (error) {
@@ -114,35 +121,55 @@ export async function getHomePageData(req,res){
 
 export async function addUser(req,res){
     try{
-        const { fullName, email, password, bio, phoneNo,role } = req.body;
+        const { fullName, email, password, bio, phoneNo,roleId,dashboardAccess } = req.body;
 
-    
-        if (!fullName || !email || !password || !phoneNo ||!role) {
+        const{userId}=decodeToken(req)
+
+        if (!fullName || !email || !password || !phoneNo ||!roleId||!dashboardAccess) {
             return res.status(400).json({ message: "fields are missing." });
         }
 
-        const user = await User.findOne({ $or:[{email},{phoneNo}] });
+       
 
-        if (user) {
-            return res.status(409).json({ message: "User already exists." });
-        }
-
-        //password hashing
+//password hashing
         const salt = await bcrypt.genSalt(10);
-
         const hashedPassword = await bcrypt.hash(password, salt);
-
-        const newUser = await User.create({
+        
+        let newUser
+        const userData={
             fullName,
             email:encrypt(email),
             emailHash:hashEmail(email),
             password: hashedPassword,
-            bio,
             phoneNo:encrypt(phoneNo),
-            hashedPhoneNo:hashEmail(phoneNo),
-            role,
-            paymentStatus:"special"
-        });
+            phoneHash:hashEmail(phoneNo),
+            role:roleId,
+            paymentStatus:"special",
+            createdBy:userId
+        }
+
+        
+
+        if(dashboardAccess==="admin"){
+
+            const user = await Admin.findOne({ $or: [{ emailhash: hashEmail(email) }, { phoneHash: hashEmail(phoneNo) }] });
+            if (user) {
+                return res.status(409).json({ message: "User already exists." });
+            }
+            newUser=await Admin.create(userData)
+
+        }
+        else if(dashboardAccess==="member"){
+        
+            const user = await User.findOne({ $or:[{emailhash:hashEmail(email)},{phoneHash:hashEmail(phoneNo)}] });
+            if (user) {
+                return res.status(409).json({ message: "User already exists." });
+            }
+            newUser = await User.create(userData);
+        }
+        else{
+            return res.status(400).json({message:"dashBoardAccess is required"})
+        }
 
         // mail sending logic 
         const mailSend = {
@@ -166,7 +193,7 @@ export async function addUser(req,res){
                         </p>
 
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="https://dna-frontend-eosin.vercel.app?fromEmail=true" 
+                            <a href="https://dna-frontend-eosin.vercel.app?isLogin=true" 
                             style="background-color: #4CAF50; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 14px;">
                             Login to Your Account
                             </a>
@@ -197,17 +224,18 @@ export async function addUser(req,res){
         }
 
 
-        const response = await resend.emails?.send({
+        const response = await resendSetup().emails?.send({
             from: "dna-support@dna.hi9.in",
             to: email,
             subject: mailSend.subject,
             html: mailSend.html
         });
 
+        console.log("mail sending repsonse in addUser",response)
 
         const token = generateToken(newUser);
 
-        res.status(200).json({ success: true, userData: newUser, token, message: "Account created successfully." });
+        res.status(200).json({ success: true, message: "Account created successfully." });
 
     } catch (error) {
         console.log("error in addUser", error);
@@ -216,7 +244,33 @@ export async function addUser(req,res){
     
 }
 
-export async function updateUserRole(req,res){
+export async function getAllUsersByAdmin(req,res){
+    try{
+        const {userId}=decodeToken(req)
+        const allUsers=await User.find({createdBy:userId}).populate("role")
+        const allAdmins=await Admin.find({createdBy:userId}).populate("role")
+        console.log("all users in getAllUsersByAdmin",allUsers)
+        const decryptedUsers=allUsers.map(user=>({
+            ...user.toObject(),
+            email:decrypt(user?.email),
+            phoneNo:decrypt(user?.phoneNo),
+            
+        }))
+        const decryptedAdmins=allAdmins.map(admin=>({
+            ...admin.toObject(),
+            email:decrypt(admin?.email),
+            phoneNo:decrypt(admin?.phoneNo)
+        }))
+        return res.status(200).json({message:"Data fetched Sucefully",data:[...decryptedUsers,...decryptedAdmins]})
+
+    }
+    catch(error){
+        console.log("Error in getAllUsersByAdmin",error)
+        return res.status(500).json({message:"Internal Server Errro"})
+    }
+}
+
+export async function updateUser(req,res){
     try{
         const {userId}=decodeToken(req);
         const{id,roleId}=req.body
@@ -311,11 +365,17 @@ export const blockUser = async( req, res) => {
 export async function getRoles(req,res){
     try{
         const{userId}=decodeToken(req);
-        const roles=await RoleModel.find({createdBy:userId})
+        const roles=await RoleModel.find({
+            createdBy:{ $in:[userId,null]},
+            roleName:{$nin:["superadmin"]}
+        })
         console.log({roles})
-        if(!roles.length){
-            return res.status(400).json({message:"Roles Not Found"})
-        }
+        // const repsonse=await RoleModel.updateMany({},{
+        //     $set:{
+        //         createdBy:null
+        //     }
+        // })
+        // console.log("responseee in getRoless",repsonse)
         return res.status(200).json({message:"Roles Fetch Successfull",data:roles})
     }
     catch(err){
@@ -344,20 +404,21 @@ export async function getOneRole(req,res){
 
 export async function addRole(req,res){
     try{
-        // const{userId}=decodeToken(req)
-        const{role,access}=req.body
+        const{userId}=decodeToken(req)
+        const{role,access,description}=req.body
         if(!role||!access){
             return res.status(400).json({message:"Please Enter all required Details"})
         }
         const existingRole=await RoleModel.find({
-            roleName:role?.toLowerCase()?.trim()
+            roleName:role?.toLowerCase()?.trim(),
+            createdBy:userId
         })
         console.log({role,existingRole})
         if(existingRole.length>0){
             return res.status(409).json({message:"Role already exists!"})
         }
         const response=await RoleModel.insertOne({
-            roleName:role,access,createdBy:"kjsdbajsbdvj"
+            roleName:role,access,createdBy:userId,description
         })
 
         console.log("Role is Added",response)
@@ -374,7 +435,8 @@ export async function addRole(req,res){
 export async function updateRole(req,res){
     try{
         const {userId}=decodeToken(req);
-        const{roleName,roleId,access}=req.body;
+        const{roleId}=req.params
+        const{roleName,access}=req.body;
         const response=await RoleModel.updateOne({
             _id:roleId
         },{
@@ -396,13 +458,23 @@ export async function updateRole(req,res){
 export async function deleteRole(req,res){
     try{
         const {userId}=decodeToken(req);
-        const{roleName,roleId,access}=req.body;
+        const{roleId}=req.params;
+        
+        const session=await mongoose.startSession()
+        
         const response=await RoleModel.deleteOne({
-            _id:roleId
-        },{
-            roleName,
-            access
-        })
+            _id: new mongoose.Types.ObjectId(roleId)
+        },{session})
+
+console.log("Searching for Role ID:", roleId, "Type:", typeof roleId);
+
+
+        const updRes=await User.updateMany({role:new mongoose.Types.ObjectId(roleId)},{
+            $set:{
+                role:null
+            }
+        },{session})
+        console.log("updates response in deleteRole",updRes)
         if(!response.deletedCount){
             return res.status(404).json({message:"Role Not found"})
         }

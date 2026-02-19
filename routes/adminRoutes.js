@@ -1,5 +1,5 @@
 import express from 'express';
-import { addRole, addUser, adminLogin, adminRegister, blockUser, deleteRole, deleteUser, getHomePageData, getOneRole, getRoles, updateRole } from '../controller/adminController.js';
+import { addRole, addUser, adminLogin, adminRegister, blockUser, deleteRole, deleteUser, getAllUsersByAdmin, getHomePageData, getOneRole, getRoles, updateRole, updateUser } from '../controller/adminController.js';
 import { adminAccessCheck } from '../middleware/accessCheck.js';
 import fetchEvents from '../controller/events/fetchEvents.js';
 import upload from '../middleware/multer.js';
@@ -13,16 +13,15 @@ import createEvent from '../controller/events/createEvent.js';
 const adminRouter = express.Router();
 
 
-adminRouter.post("/addUser",adminAccessCheck("users:write"),addUser)
 
 adminRouter.get("/getHomePageData",getHomePageData)
 
 adminRouter.get("/getRoles",adminAccessCheck("roles:read"),getRoles)
-adminRouter.get("/getRole:id",adminAccessCheck("roles:read"),getOneRole)
-// adminRouter.post("/addRole",adminAccessCheck("role:write"),addRole)
-adminRouter.post("/addRole",addRole)
-adminRouter.put("/updateRole",adminAccessCheck("roles:update"),updateRole)
-adminRouter.delete("/deleteRole",adminAccessCheck("roles:delete"),deleteRole)
+adminRouter.get("/getRole/:id",adminAccessCheck("roles:read"),getOneRole)
+adminRouter.post("/addRole",adminAccessCheck("role:write"),addRole)
+// adminRouter.post("/addRole",addRole)
+adminRouter.put("/updateRole/:roleId",adminAccessCheck("roles:update"),updateRole)
+adminRouter.delete("/deleteRole/:roleId",adminAccessCheck("roles:delete"),deleteRole)
 
 
 
@@ -38,11 +37,17 @@ adminRouter.put("/updateEvent/:id",adminAccessCheck("events:update"),upload.fiel
     ]),updateEvent)
 
 
-adminRouter.get("/users",adminAccessCheck("users:read"), getAllUsers);
-adminRouter.delete("/deleteUser/:id",adminAccessCheck("users:delete"), deleteUser);
+adminRouter.get("/users",adminAccessCheck("members:read"), getAllUsers);
 //route block the user by admin
-adminRouter.put("/blockUser/:id" ,adminAccessCheck("users:update"), blockUser)
+adminRouter.put("/blockUser/:id" ,adminAccessCheck("members:update"), blockUser)
 
 
+
+// routes for users in admin for adding roles
+
+adminRouter.get("/getAllUsersByAdmin",adminAccessCheck("users:read"),getAllUsersByAdmin)
+adminRouter.post("/addUser",adminAccessCheck("users:write"),addUser)
+adminRouter.delete("/deleteUser/:id",adminAccessCheck("users:delete"), deleteUser);
+adminRouter.patch("/updateUser",adminAccessCheck("users:update"),updateUser)
 
 export default adminRouter;

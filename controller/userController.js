@@ -1,9 +1,17 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
-import { generateToken } from "../lib/utils.js";
+import { decodeToken, generateToken } from "../lib/utils.js";
 import {v2 as cloudinary} from "cloudinary"
 import resend from "../lib/mailer.js";
 import {decrypt, encrypt, hashEmail} from "../lib/encrypt.js"
+import { EventModel } from "../models/event.js";
+
+
+
+//controller to check if user is authenticated 
+export const checkAuth = async (req, res) => {
+    res.status(200).json({ success: true, user: req.user });
+}
 
 //Sign up form
 export const signUp = async (req, res) => {
@@ -35,7 +43,7 @@ export const signUp = async (req, res) => {
             designation:encrypt(designation),
             emailHash:hashEmail(email),
             phoneHash:hashEmail(phoneNo),
-            role:"698f1f9718709952f015bb56"
+            role:"69906336f94bb4961368eafd"
         });
 
         // mail sending logic 
@@ -145,12 +153,10 @@ export const Login = async (req, res) => {
         }
 
         
-        userData.email=decrypt(userData.email)
-        userData.phoneNo=decrypt(userData.phoneNo)
-        userData.designation=decrypt(userData.designation)
-console.log(
-            {userData}
-        )
+        userData.email=userData?.email?decrypt(userData.email):null
+        userData.phoneNo=userData?.phoneNo?decrypt(userData.phoneNo):null
+        userData.designation=userData?.designation?decrypt(userData.designation):null
+    console.log( {userData})
         const token = generateToken(userData);
     //     res.cookie("loginToken", token, {
     //     httpOnly: true,
@@ -167,15 +173,38 @@ console.log(
     }
 }
 
-//controller to check if user is authenticated 
-export const checkAuth = async (req, res) => {
-    res.status(200).json({ success: true, user: req.user });
+
+
+export const getHomePageData=async(req,res)=>{
+    try{
+        const{userId}=decodeToken(req)
+        const usersCount=await User.countDocuments({})
+
+        const user=await User.findById(userId).populate("role")
+
+        const roleAccess=user.role.access
+        let allEvents=[]
+        if(roleAccess.includes("events:read")){
+             allEvents=await EventModel.find({})
+        }
+
+        res.status(200).json({success:"true",data:{
+            usersCount,allEvents,accesses:roleAccess
+
+        }})
+    }
+    catch(error){
+        console.log("Error in getHomePageData",error)
+        return res.status(500).json({message:"Internal Server Error"})
+    }
 }
+
+
 
 //controller update user profile details
 export const updateProfile = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const {userId} = decodeToken(req);
 
         const updateData = {};
 
@@ -183,10 +212,10 @@ export const updateProfile = async (req, res) => {
 
         // ===== basic fields =====
         if (req.body.fullName) updateData.fullName = req.body.fullName;
-        if (req.body.email) updateData.email = req.body.email;
+        if (req.body.email) updateData.email = encrypt(req.body.email);
         if (req.body.bio) updateData.bio = req.body.bio;
-        if (req.body.phoneNo) updateData.phoneNo = req.body.phoneNo;
-        if (req.body.designation) updateData.designation = req.body.designation;
+        if (req.body.phoneNo) updateData.phoneNo = encrypt(req.body.phoneNo);
+        if (req.body.designation) updateData.designation = encrypt(req.body.designation);
         if (req.body.hospitalName) updateData.hospitalName = req.body.hospitalName;
 
         // ===== years of experience =====
@@ -321,8 +350,6 @@ export const updateProfile = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("update profile error", error);
-        res.status(500).json({ message: error.message });
         console.error("update profile error", error);
         res.status(500).json({ message: error.message });
     }
