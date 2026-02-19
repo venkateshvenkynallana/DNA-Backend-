@@ -109,7 +109,6 @@ const userSchema = new mongoose.Schema({
     },
     createdBy:{
         type:mongoose.Schema.Types.ObjectId,
-        required:true,
         default:null,
         ref:"admin"
     },

@@ -43,7 +43,8 @@ export const signUp = async (req, res) => {
             designation:encrypt(designation),
             emailHash:hashEmail(email),
             phoneHash:hashEmail(phoneNo),
-            role:"69906336f94bb4961368eafd"
+            role:"69906336f94bb4961368eafd",
+            createdBy: null
         });
 
         // mail sending logic 
