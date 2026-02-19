@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import User from "../../models/User.js";
 import resendSetup from "../../lib/mailer.js";
-import { decrypt } from "../../lib/encrypt.js";
+import { decrypt, hashEmail } from "../../lib/encrypt.js";
 
 export const paymentController = async (req, res) => {
     try {
@@ -144,6 +144,33 @@ export const paymentNotification = async (req, res) => {
 
     } catch (error) {
         console.log("notification sending error")
+        res.status(500).json({ message: "Internal Server Error...!" })
+    }
+}
+
+//get the userid 
+export const getPaymentUser = async(req, res)=>{
+    try {
+        const { email } = req.query;
+        if(!email){
+            return res.status(404).json({message: "fields are missing...!"})
+        }
+        const user = await User.findOne({emailHash:hashEmail(email)}).select("_id email fullName");
+
+        if(!user){
+            return res.status(404).json({success: false, message: "fields are user data missing...!"})           
+        }
+        return res.status(200).json({
+            success: true,
+            message: "User fetched successfully",
+            data: {
+                userId: user._id,
+                email: user.email,
+                fullName: user.fullName
+            }
+        })
+    } catch (error) {
+        console.log("get user id error")
         res.status(500).json({ message: "Internal Server Error...!" })
     }
 }

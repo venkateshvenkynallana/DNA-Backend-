@@ -14,12 +14,10 @@ export const getPaymentDetails = async (req, res) => {
 
         const users = await User.find({
             paymentRefId: { $ne: null },
-            paymentRefImg: { $ne: null }
-        }).populate("role");
+            paymentRefImg: { $ne: null },
+            status: "pending",
+        });
 
-        if (!users || users.length === 0) {
-            return res.status(404).json({ success: false, message: "No Users found with Payment Details" })
-        }
 
         return res.status(200).json({
             success: true,

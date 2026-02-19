@@ -60,7 +60,7 @@ adminRouter.get("/payment",adminAccessCheck("payments:read"), getPaymentDetails)
 adminRouter.put("/mail/:userId",adminAccessCheck("payments:update"), paymentNotification)
 
 //admin verified the user
-adminRouter.put("/:userId",adminAccessCheck("payments:update"), verifyPaymentDetails)
+adminRouter.put("/verify/:userId",adminAccessCheck("payments:update"), verifyPaymentDetails)
 
 
 export default adminRouter;
