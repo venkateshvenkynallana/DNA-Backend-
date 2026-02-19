@@ -1,6 +1,8 @@
 import express from "express";
 import { adminLogin, adminRegister } from "../controller/adminController.js";
 import { forgotPassword, Login, resetPassword, signUp, verifyOtp } from "../controller/userController.js";
+import { paymentController } from "../controller/payments/paymentController.js";
+import upload from "../middleware/multer.js";
 
 
 export const authRouter=express.Router()
@@ -22,7 +24,9 @@ authRouter.post("/forget-password", forgotPassword);
 authRouter.post("/verify-otp", verifyOtp);
 authRouter.post("/reset-password", resetPassword)
 
-
+authRouter.post("/payment/:userId", upload.fields([
+    { name: "paymentRefImg", maxCount: 1 }
+]), paymentController);
 
 // router.get("/getEvents",protectAdminRoute,accessCheck("events:read"),fetchEvents)
 // router.post("/createEvent",protectAdminRoute,accessCheck("events:write"),upload.fields([
