@@ -1,5 +1,6 @@
 import express from "express";
-
+import dotenv from "dotenv"
+dotenv.config()
 
 import {connectDB, updateFields} from "./lib/db.js";
 import cors from "cors";
