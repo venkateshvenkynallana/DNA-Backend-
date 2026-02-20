@@ -182,15 +182,21 @@ export const getHomePageData=async(req,res)=>{
         const usersCount=await User.countDocuments({})
 
         const user=await User.findById(userId).populate("role")
-
+        const pendingRequestsCount=await User.countDocuments({status:"pending",$expr: {
+            $regexMatch: {
+            input: { $toString: "$_id" },
+            regex: userId, 
+            options: "i"
+            }
+        }})
         const roleAccess=user.role.access
         let allEvents=[]
-        if(roleAccess.includes("events:read")){
+        if(roleAccess.includes("events:read")||roleAccess.includes("*")){
              allEvents=await EventModel.find({})
         }
 
         res.status(200).json({success:"true",data:{
-            usersCount,allEvents,accesses:roleAccess
+            usersCount,allEvents,accesses:roleAccess,pendingRequestsCount
 
         }})
     }

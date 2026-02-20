@@ -12,11 +12,11 @@ async function createEvent(req,res){
             return res.status(400).json({message:"Please enter all required details"})
         }
          let bannerLink=null;
-                console.log("body in create Event",req.body)
+                // console.log("body in create Event",req.body)
                 if(banner){
                     bannerLink=await uploadFile(banner)
                 }
-        console.log("in Create Event",req.body)
+        // console.log("in Create Event",req.body)
         const response=await EventModel.insertOne({
             organisedBy:userId,
             eventName,
@@ -36,7 +36,7 @@ async function createEvent(req,res){
        return res.status(201).json({message:"Event Created Successfully"})
     }
     catch(err){
-        console.error("error in createEvent.js",err.message)
+        console.error("error in createEvent.js",err)
        return res.status(500).json({message:"Internal Server Error! Event Creation Failed"})
     }
 

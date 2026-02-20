@@ -14,7 +14,7 @@ userRouter.get("/homePageData",getHomePageData)
 
 
 userRouter.put(
-    "/update-profile",accessCheck("users:update"),
+    "/update-profile",accessCheck("members:update"),
     upload.fields([
         { name: "profilepic", maxCount: 1 },
         { name: "mediaUploadImages", maxCount: 10 }
@@ -27,8 +27,8 @@ userRouter.put(
 
 
 
-userRouter.get("/userscount",accessCheck("users:read"), getUsersInUserDashboard);
-userRouter.get("/getAllEvents",accessCheck("events:read"),fetchAllEvents)
+userRouter.get("/userscount",accessCheck("members:read"), getUsersInUserDashboard);
+userRouter.get("/getAllEvents",accessCheck("members:read"),fetchAllEvents)
 
 
 export default userRouter;

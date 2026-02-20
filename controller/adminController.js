@@ -98,14 +98,14 @@ export const adminLogin = async (req, res) => {
 export async function getHomePageData(req,res){
     try{
         const{userId}=decodeToken(req)
-       console.log("user id in getHomePageData",userId)
+    //    console.log("user id in getHomePageData",userId)
             const user=await Admin?.findById(userId)?.populate("role")
-            console.log("user in getHomePgae",user)
+            // console.log("user in getHomePgae",user)
             const accessList=user?.role?.access
 
             const members=await User?.find({});
             const adminsCreated=await Admin?.find({createdBy:userId})
-            console.log("accessList",accessList)
+            // console.log("accessList",accessList)
             
             const membersCreated=members?.filter(mem=>mem.createdBy===userId)
             const noOfMemCreated=membersCreated?.length
@@ -249,7 +249,7 @@ export async function getAllUsersByAdmin(req,res){
         const {userId}=decodeToken(req)
         const allUsers=await User.find({createdBy:userId}).populate("role")
         const allAdmins=await Admin.find({createdBy:userId}).populate("role")
-        console.log("all users in getAllUsersByAdmin",allUsers)
+        // console.log("all users in getAllUsersByAdmin",allUsers)
         const decryptedUsers=allUsers.map(user=>({
             ...user.toObject(),
             email:decrypt(user?.email),
@@ -336,11 +336,18 @@ export const deleteUser = async (req, res) => {
         const response = await User.deleteOne({
             _id: id
         })
-        console.log("response in delete user", response);
 
-        if(!response.deletedCount){
+
+        let admResponse
+        if(!(response.matchedCount)){
+         admResponse=await Admin.deleteOne({_id:id}) 
+        }
+       
+        if(response.matchedCount===0 && admResponse.matchedCount===0){
             return res.status(404).json({message:"User Not found"})
         }
+
+        // console.log("response in delete user", response);
 
         return res.status(200).json({message: "User Deleted!"})
 
@@ -404,7 +411,7 @@ export async function getRoles(req,res){
             createdBy:{ $in:[userId,null]},
             roleName:{$nin:["superadmin"]}
         })
-        console.log({roles})
+        // console.log({roles})
         // const repsonse=await RoleModel.updateMany({},{
         //     $set:{
         //         createdBy:null
@@ -423,7 +430,7 @@ export async function getOneRole(req,res){
     try{
         // const {userId}=decodeToken(req);
         const{id}=req.params
-        console.log("id in getOneRole",id)
+        // console.log("id in getOneRole",id)
         const roleFound=await RoleModel.findById(id)
         if(!roleFound){
             return res.status(400).json({message:"Role Not Found"})
@@ -496,9 +503,16 @@ export async function deleteRole(req,res){
         const{roleId}=req.params;
         
         const session=await mongoose.startSession()
+
+        const defaultRoleIds=["69906336f94bb4961368eafd","699817875af680520f78ab7a"]
         
+        if(defaultRoleIds.includes(roleId)){
+            return res.status(400).json({message:"This Role Is Default You cant delete it"})    
+            
+        }
         const response=await RoleModel.deleteOne({
-            _id: new mongoose.Types.ObjectId(roleId)
+            _id: new mongoose.Types.ObjectId(roleId),
+            createdBy:new mongoose.Types.ObjectId(userId)
         },{session})
 
 console.log("Searching for Role ID:", roleId, "Type:", typeof roleId);

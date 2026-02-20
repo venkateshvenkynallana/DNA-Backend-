@@ -13,7 +13,7 @@ import { EventModel } from "../../models/event.js"
             return res.status(400).json({message:"Please Select the appropriate Event"})
         }
         let bannerLink=null;
-        console.log("body in update Event",req.body)
+        // console.log("body in update Event",req.body)
         if(banner){
             bannerLink=await uploadFile(banner)
         }

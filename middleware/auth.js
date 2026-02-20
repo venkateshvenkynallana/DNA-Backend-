@@ -8,7 +8,7 @@ import Admin from "../models/Admin.js";
 export const protectUserRoute = async(req, res, next) => {
     try {
         const{userId}=await decodeToken(req)
-        console.log("userId in protectedROute",userId)
+        // console.log("userId in protectedROute",userId)
         req.userId = userId;
         const user =  await User.findById(userId).select("-password");
         if(!user ) return res.status(404).json({message: "User not found."});
@@ -28,11 +28,11 @@ export const protectAdminRoute = async (req, res, next) => {
         
         const{userId}=await decodeToken(req)
 
-        console.log("userId in protect admin route",userId)
+        // console.log("userId in protect admin route",userId)
         // Look in Admin collection, not User
         const adminUser = await Admin.findById(userId).select("-password");
         if (!adminUser) return res.status(404).json({ message: "Admin not found." });
-        console.log("adminUser in adminPRotectroute",adminUser)
+        // console.log("adminUser in adminPRotectroute",adminUser)
 
         // req.user = adminUser;
         next();
