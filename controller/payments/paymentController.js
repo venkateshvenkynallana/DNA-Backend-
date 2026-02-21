@@ -93,6 +93,32 @@ export const verifyPaymentDetails = async (req, res) => {
             return res.status(404).json({ message: "User not found...!" })
         }
 
+        await resendSetup().emails?.send({
+            from: "dna-support@dna.hi9.in",
+            to: decrypt(updateData.email),
+            subject: "Payment Verified – You Can Now Access DNA",
+            html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>Hello ${updateData.fullName},</h2>
+
+            <p>We’re happy to inform you that your payment details have been successfully verified.</p>
+
+            <p style="color: green; font-weight: bold;">
+                You can now log in to your DNA account and start using all features without any issues.
+            </p>
+
+            <br/>
+
+            <p>If you face any difficulties, feel free to contact our support team.</p>
+
+            <br/>
+
+            <p>Regards,<br/>
+            DNA Support Team</p>
+        </div>
+    `
+        });
+
         return res.status(200).json({
             success: true,
             message: "User Status Updated successfully.",
@@ -112,7 +138,7 @@ export const paymentNotification = async (req, res) => {
             return res.status(404).json({ message: "USer not found...!" })
         }
         const user = await User.findById(userId);
-        console.log("useremail",decrypt(user.email))
+        console.log("useremail", decrypt(user.email))
         if (!user) {
             return res.status(404).json({ message: "User not found in DB" })
         }
@@ -149,16 +175,16 @@ export const paymentNotification = async (req, res) => {
 }
 
 //get the userid 
-export const getPaymentUser = async(req, res)=>{
+export const getPaymentUser = async (req, res) => {
     try {
         const { email } = req.query;
-        if(!email){
-            return res.status(404).json({message: "fields are missing...!"})
+        if (!email) {
+            return res.status(404).json({ message: "fields are missing...!" })
         }
-        const user = await User.findOne({emailHash:hashEmail(email)}).select("_id email fullName");
+        const user = await User.findOne({ emailHash: hashEmail(email) }).select("_id email fullName");
 
-        if(!user){
-            return res.status(404).json({success: false, message: "fields are user data missing...!"})           
+        if (!user) {
+            return res.status(404).json({ success: false, message: "fields are user data missing...!" })
         }
         return res.status(200).json({
             success: true,
