@@ -1,3 +1,4 @@
+import { decrypt } from "../../lib/encrypt.js";
 import Connections from "../../models/Connection.js";
 
 
@@ -6,15 +7,23 @@ export const getConnectionsController = async (req, res) => {
         const  userId  = req.userId;
         console.log("User ID from token:", userId);
 
-        const getConnections = await Connections.find({
+        const getConnection = await Connections.find({
             status: "accepted",
             $or: [
                 { sender: userId },
                 { receiver: userId }
             ]
         })
-        .populate("sender", "fullName profilePic designation")
+        .populate("sender", "fullName profilePic designation senderDesignation")
         .populate("receiver", "fullName profilePic designation");
+
+        const getConnections = getConnection.map((user)=>{
+            return{
+                ...user.toObject(),
+                senderDesignation: decrypt(user.senderDesignation),
+                receiverDesignation: decrypt(user.receiverDesignation),
+            }
+        })
 
         res.status(200).json({ 
             count: getConnections.length,

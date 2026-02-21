@@ -4,6 +4,8 @@ import upload from "../middleware/multer.js";
 import { getUsersInUserDashboard } from '../controller/getAllUsersController.js';
 import fetchAllEvents from "../controller/events/fetchAllEvents.js";
 import { accessCheck } from "../middleware/accessCheck.js";
+import { getFindDoctorDetails } from "../controller/connections/getFindDoctorDetails.js";
+import { getViewProfileDetails } from "../controller/connections/getViewProfileDetails.js";
 
 const userRouter = express.Router();
 
@@ -30,5 +32,9 @@ userRouter.put(
 userRouter.get("/userscount",accessCheck("members:read"), getUsersInUserDashboard);
 userRouter.get("/getAllEvents",accessCheck("members:read"),fetchAllEvents)
 
+//get user finddoctors details
+userRouter.get("/finddoctor", accessCheck("members:read"), getFindDoctorDetails);
+//get user viewprofile
+userRouter.get("/viewprofile/:userId", accessCheck("members: read"), getViewProfileDetails)
 
 export default userRouter;
