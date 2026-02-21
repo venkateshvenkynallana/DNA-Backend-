@@ -7,6 +7,7 @@ import resend, { resendSetup } from "../lib/mailer.js";
 // import user from "../models/User.js";
 import { decrypt, encrypt, hashEmail } from "../lib/encrypt.js";
 import mongoose from "mongoose";
+import { getIO, onlineUsers } from "../lib/socket.js";
  
 // create admin
 
@@ -488,6 +489,9 @@ export async function updateRole(req,res){
         if(!response.matchedCount){
             return res.status(404).json({message:"Role Not found"})
         }
+        // const io=getIO()
+        // const socketId=onlineUsers.get()
+        // io.to()
 
         return res.status(200).json({message:"Role Updated!"})
     }

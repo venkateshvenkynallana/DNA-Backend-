@@ -1,7 +1,10 @@
 import { decrypt } from "../../lib/encrypt.js";
+import mongoose from "mongoose";
 import resendSetup from "../../lib/mailer.js";
+import { getIO, onlineUsers } from "../../lib/socket.js";
 import { decodeToken } from "../../lib/utils.js";
 import Connections from "../../models/Connection.js";
+import { Notification } from "../../models/notifications.js";
 import User from "../../models/User.js";
 
 export const sendConnectionRequest = async (req, res) => {
@@ -11,7 +14,9 @@ export const sendConnectionRequest = async (req, res) => {
         const senderId = userId;
         const { receiverId } = req.body;
 
-        if (senderId === receiverId) {
+        const session=await mongoose.startSession()
+
+        if(senderId === receiverId) {
             return res.status(400).json({ message: "You cannot send a connection request to yourself." });
         }
 
@@ -21,6 +26,7 @@ export const sendConnectionRequest = async (req, res) => {
         if(!senderUser || !receiverUser) {
             return res.status(404).json({ message: "Sender or receiver user not found." });
         }
+
 
         const existingConnection = await Connections.findOne({
             $or: [
@@ -33,8 +39,8 @@ export const sendConnectionRequest = async (req, res) => {
             return res.status(400).json({ message: "Connection request already sent." });
         }
 
-        const newConnection = await Connections.create({
-            _id: `${senderId}_._${receiverId}`,
+        const newConnection = await Connections.insertOne({
+             _id: `${senderId}_._${receiverId}`,
             sender: senderId,
             senderFullName: senderUser.fullName,
             senderProfilePic: senderUser.profilepic,
@@ -47,7 +53,7 @@ export const sendConnectionRequest = async (req, res) => {
 
             status: "pending"
 
-        });
+        },{session});
 
 
         await resendSetup().emails?.send({

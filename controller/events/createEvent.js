@@ -7,7 +7,7 @@ async function createEvent(req,res){
     try{
         const{userId,fullName,email}= decodeToken(req)
         const{eventName,eventLocation,startDate,startTime,description,
-            guests,banner,eventTrailer,registrationFee}=req.body;
+            guests,banner,trailer,registrationFee}=req.body;
         if(!(eventName&&eventLocation&&startDate)){
             return res.status(400).json({message:"Please enter all required details"})
         }
@@ -26,7 +26,7 @@ async function createEvent(req,res){
             guests,
            eventMedia:{
             banner:bannerLink,
-            trailer:eventTrailer
+            trailer:trailer
            },
            registrationFee:isNaN(parseInt(registrationFee))?0:parseInt(registrationFee)
             

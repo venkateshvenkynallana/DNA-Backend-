@@ -1,5 +1,9 @@
 import Connections from "../../models/Connection.js";
 import { decodeToken } from "../../lib/utils.js"
+import { connect } from "mongoose";
+import { getIO, onlineUsers } from "../../lib/socket.js";
+import { Notification } from "../../models/notifications.js";
+import mongoose from "mongoose";
 
 
 export const acceptConnectRequest = async (req, res) =>{
@@ -9,6 +13,7 @@ export const acceptConnectRequest = async (req, res) =>{
         const { _id } = req.params;
 
         const { status } = req.body;
+        // const session=mongoose.startSession();
 
         if(!["accepted", "rejected"].includes(status)){
             return res.status(400).json({ message: "Invalid status value" });
@@ -32,6 +37,19 @@ export const acceptConnectRequest = async (req, res) =>{
         if( status === "accepted"){
             connection.deleteAfter = null;
         }
+         const io=getIO()
+          const data={
+                    notificationType:"Request Accepted",      
+                    notificationBy:connection?.sender,
+                    notificationTo:connection?.receiver,
+                    notificationMessage:`${connection.receiverFullName} has Accepted your friend request`
+                }
+        
+                const recieverSocketId=onlineUsers.get(connection?.sender?.toString())
+                console.log("recievreeeeee",recieverSocketId,connection?.sender)
+                if(recieverSocketId) io.to(recieverSocketId).emit("notification",data)
+                const notifyResponse=await Notification.insertOne(data)
+                console.log("Notifyyyyyy responseeee",notifyResponse)
         
         await connection.save();
 

@@ -7,14 +7,14 @@ import { EventModel } from "../../models/event.js"
      try {
          const { id } = req.params
          const { eventName, eventLocation, startDate, startTime, 
-            description, guests, banner, eventTrailer, registrationFee } = req.body;
-        
+            description, guests, banner, trailer, registrationFee } = req.body;
+        console.log("trailer in updatevent",trailer)
         if(!id){
             return res.status(400).json({message:"Please Select the appropriate Event"})
         }
-        let bannerLink=null;
+        let bannerLink=banner;
         // console.log("body in update Event",req.body)
-        if(banner){
+        if(!banner.includes("res.cloudinary.com")){
             bannerLink=await uploadFile(banner)
         }
         const response = await EventModel.updateOne({
@@ -29,7 +29,7 @@ import { EventModel } from "../../models/event.js"
                                                 guests,
                                                 eventMedia: {
                                                     banner: bannerLink,
-                                                    trailer: eventTrailer
+                                                    trailer: trailer
                                                 },
                                                 registrationFee: isNaN(parseInt(registrationFee)) ? 0 : parseInt(registrationFee)
 
