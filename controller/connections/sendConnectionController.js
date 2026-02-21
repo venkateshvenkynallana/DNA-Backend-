@@ -1,6 +1,9 @@
+import mongoose from "mongoose";
 import resendSetup from "../../lib/mailer.js";
+import { getIO, onlineUsers } from "../../lib/socket.js";
 import { decodeToken } from "../../lib/utils.js";
 import Connections from "../../models/Connection.js";
+import { Notification } from "../../models/notifications.js";
 import User from "../../models/User.js";
 
 export const sendConnectionRequest = async (req, res) => {
@@ -9,6 +12,8 @@ export const sendConnectionRequest = async (req, res) => {
         const { userId } = await decodeToken(req);
         const senderId = userId;
         const { receiverId } = req.body;
+
+        const session=await mongoose.startSession()
 
         if(senderId === receiverId) {
             return res.status(400).json({ message: "You cannot send a connection request to yourself." });
@@ -21,6 +26,7 @@ export const sendConnectionRequest = async (req, res) => {
             return res.status(404).json({ message: "Sender or receiver user not found." });
         }
 
+
         const existingConnection = await Connections.findOne({
             $or: [
                 { sender: senderId, receiver: receiverId },
@@ -32,7 +38,7 @@ export const sendConnectionRequest = async (req, res) => {
             return res.status(400).json({ message: "Connection request already sent." });
         }
 
-        const newConnection = await Connections.create({
+        const newConnection = await Connections.insertOne({
              _id: `${senderId}_._${receiverId}`,
             sender: senderId,
             senderFullName: senderUser.fullName,
@@ -46,8 +52,21 @@ export const sendConnectionRequest = async (req, res) => {
             
             status: "pending"
            
-        });
+        },{session});
 
+        const io=getIO()
+            const data={
+            notificationType:"Friend Request",      
+            notificationBy:senderId,
+            notificationTo:receiverId,
+            notificationMessage:`${senderUser.fullName} has Sent an friend request to you`
+        }
+
+        const recieverSocketId=onlineUsers.get(receiverId)
+        console.log("recievreeeeee",recieverSocketId,receiverId)
+        if(recieverSocketId) io.to(recieverSocketId).emit("notification",data)
+        const notifyResponse=await Notification.insertOne(data,{session})
+        console.log("Notifyyyyyy responseeee",notifyResponse)
 
         // const sendRequest = await resendSetup.emails?.send({
         //     from: "dna-support@dna.hi9.in",

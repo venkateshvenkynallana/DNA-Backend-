@@ -211,7 +211,7 @@ export const getHomePageData=async(req,res)=>{
 //controller update user profile details
 export const updateProfile = async (req, res) => {
     try {
-        const {userId} = decodeToken(req);
+        // const {userId} = decodeToken(req);
 
         const updateData = {};
 
@@ -345,7 +345,7 @@ export const updateProfile = async (req, res) => {
         console.log("Final updateData:", updateData);
 
         const updatedUser = await User.findByIdAndUpdate(
-            userId,
+            (req?.body?.userId),
             { $set: updateData },
             { new: true, runValidators: true }
         );

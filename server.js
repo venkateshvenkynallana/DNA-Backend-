@@ -18,6 +18,8 @@ import connectRouter from "./routes/connectRoutes.js";
 // import { connectEncrypted, createKey } from "./lib/encrypt.js";
 import dns from 'node:dns/promises';
 import { socketSetup } from "./lib/socket.js";
+import { Server } from "socket.io";
+
 dns.setServers(['1.1.1.1', '1.0.0.1']);
 
 const app = express();
@@ -26,7 +28,8 @@ const server = http.createServer(app);
 
 cloudinarySetup();
 resendSetup();
-// socketSetup(server)
+socketSetup(server,app)
+
 
 const allowedOrigins=[
   "https://dna-frontend-eosin.vercel.app",
@@ -59,7 +62,7 @@ app.use("/api/connections", connectRouter)
 app.use("/api/auth",authRouter)
 
 
-const PORT = process.env.PORT ;
+const PORT = process.env.PORT||5000 ;
 
 server.listen(PORT, () => {
   console.log("Backend running on port : "+ PORT);
