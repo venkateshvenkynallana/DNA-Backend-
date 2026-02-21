@@ -2,9 +2,11 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { decodeToken, generateToken } from "../lib/utils.js";
 import {v2 as cloudinary} from "cloudinary"
-import resend from "../lib/mailer.js";
+import resend, { resendSetup } from "../lib/mailer.js";
 import {decrypt, encrypt, hashEmail} from "../lib/encrypt.js"
 import { EventModel } from "../models/event.js";
+import  Connection  from "../models/Connection.js";
+import mongoose from "mongoose";
 
 
 
@@ -100,7 +102,7 @@ export const signUp = async (req, res) => {
         }
 
 
-        const response = await resend.emails?.send({
+        const response = await resendSetup().emails?.send({
             from: "dna-support@dna.hi9.in",
             to: email,
             subject: mailSend.subject,
@@ -181,14 +183,16 @@ export const getHomePageData=async(req,res)=>{
         const{userId}=decodeToken(req)
         const usersCount=await User.countDocuments({})
 
+        const objectUserId = new mongoose.Types.ObjectId(userId);
         const user=await User.findById(userId).populate("role")
-        const pendingRequestsCount=await User.countDocuments({status:"pending",$expr: {
-            $regexMatch: {
-            input: { $toString: "$_id" },
-            regex: userId, 
-            options: "i"
-            }
-        }})
+        const pendingRequestsCount = await Connection.countDocuments({
+            status: "pending",
+            $or: [
+                { sender: objectUserId },
+                { receiver: objectUserId }
+            ]
+        })
+        console.log("pendingRequestsCount",pendingRequestsCount);
         const roleAccess=user.role.access
         let allEvents=[]
         if(roleAccess.includes("events:read")||roleAccess.includes("*")){
