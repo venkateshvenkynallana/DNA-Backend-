@@ -515,8 +515,7 @@ export async function deleteRole(req,res){
             createdBy:new mongoose.Types.ObjectId(userId)
         },{session})
 
-console.log("Searching for Role ID:", roleId, "Type:", typeof roleId);
-
+// console.log("Searching for Role ID:", roleId, "Type:", typeof roleId);
 
         const updRes=await User.updateMany({role:new mongoose.Types.ObjectId(roleId)},{
             $set:{

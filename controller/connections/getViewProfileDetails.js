@@ -23,6 +23,7 @@ export const getViewProfileDetails = async(req, res)=>{
                 { sender: userId, receiver: loggedInUserId }
             ]
         });
+        const connectionStatus = connection ? connection.status : null;
 
         const user= await User.findById(userId).select("-password -resetOtp -otpExpire");
 
@@ -32,14 +33,13 @@ export const getViewProfileDetails = async(req, res)=>{
 
         if(connection && connection.status === "accepted"){
             const userObj = user.toObject();
-
             return res.status(200).json({
                 success: true,
+                connectionStatus,
                 data:{
                     ...userObj,
-                    designation: userObj.designation ? decrypt(userObj.designation) : null,
+                    designation:(userObj?.designation)?decrypt(userObj.designation):null,
                     email: userObj.email ? decrypt(userObj.email) : null,
-                    bio: userObj.bio ? decrypt(userObj.bio) : null,
                     phoneNo: userObj.phoneNo ? decrypt(userObj.phoneNo) : null,
                 }
             })
@@ -47,6 +47,7 @@ export const getViewProfileDetails = async(req, res)=>{
 
         return res.status(200).json({
             access:"limited",
+            connectionStatus,
             data:{
                 _id: user._id,
                 fullName: user?.fullName,

@@ -11,7 +11,7 @@ export const getFindDoctorDetails = async(req, res)=>{
                 {_id: {$ne: userId}}
             ).select("-password");
             const decryptedData = users.map((user) => {
-                console.log("usernameformat",user)
+                
                 return {
                     fullName:user?.fullName,
                     designation:(user?.designation)?decrypt(user.designation):null,
