@@ -10,6 +10,7 @@ import updateEvent from"../controller/events/updateEvent.js"
 import createEvent from '../controller/events/createEvent.js';
 import { getPaymentDetails } from '../controller/payments/getPaymentDetails.js';
 import { paymentNotification, verifyPaymentDetails } from '../controller/payments/paymentController.js';
+import { updateProfile } from '../controller/userController.js';
 
 
 const adminRouter = express.Router();
@@ -43,6 +44,17 @@ adminRouter.get("/users",adminAccessCheck("members:read"), getAllUsers);
 //route block the user by admin
 adminRouter.put("/blockUser/:id" ,adminAccessCheck("members:update"), blockUser)
 adminRouter.patch("/updateMemberRole",adminAccessCheck("members:update"),updateMemberRole)
+
+
+adminRouter.put(
+    "/update-profile",adminAccessCheck("members:update"),
+    upload.fields([
+        { name: "profilepic", maxCount: 1 },
+        { name: "mediaUploadImages", maxCount: 10 }
+    ]),
+    updateProfile
+);
+
 
 // routes for users in admin for adding roles
 
