@@ -1,3 +1,4 @@
+import { decrypt } from "../../lib/encrypt.js";
 import { decodeToken } from "../../lib/utils.js";
 import Admin from "../../models/Admin.js";
 import User from "../../models/User.js"
@@ -18,12 +19,22 @@ export const getPaymentDetails = async (req, res) => {
             status: "pending",
         });
 
+        const decryptedData = users.map((user)=> {
+            return{
+                ...user.toObject(),
+                fullName: user.fullName,
+                phoneNo: decrypt(user.phoneNo),
+                status : user.status,
+                paymentRefId: user.paymentRefId,
+                paymentRefImg: user.paymentRefImg
+            }
+        })
 
         return res.status(200).json({
             success: true,
             message: "User with paymennt details fetch successfully...",
             count: users.length,
-            data: users
+            data: decryptedData
         });
 
     } catch (error) {
