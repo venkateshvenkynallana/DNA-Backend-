@@ -59,3 +59,23 @@ export const getUsersInUserDashboard = async(req, res) =>{
         res.status(500).json({ message: "Internal server error" });
     }
 }
+
+//get user viewprofile data
+export const getViewProfile = async(req, res)=>{
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId).select("-password -emailHash -phoneHash");
+        if(!user){
+            return res.status(404).json({message: "User not found..!"})
+        }
+        user.email=user?.email?decrypt(user.email):null;
+        user.phoneNo=user?.phoneNo?decrypt(user.phoneNo):null;
+        user.designation=user?.designation?decrypt(user.designation):null;
+
+        res.status(200).json({ success: true, data: user});
+    } catch (err) {
+        console.log("get users details error", error);
+        res.status(500).json({ message: "Internal server error..!" });
+    }
+}

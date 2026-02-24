@@ -25,7 +25,7 @@ export const signUp = async (req, res) => {
             return res.status(400).json({ message: "fields are missing." });
         }
 
-        const user = await User.findOne({ $or:[{emailHash:hashEmail(email)},{phoneHash:hashEmail(phoneNo)}] });
+        const user = await User.findOne({ $or: [{ emailHash: hashEmail(email) }, { phoneHash: hashEmail(phoneNo) }] });
 
         if (user) {
             return res.status(409).json({ message: "User already exists." });
@@ -130,23 +130,23 @@ export const Login = async (req, res) => {
             return res.status(400).json({message:"Plase enter all credentials"})
         }
 
-        console.log("encrypted data email",email)
+        console.log("encrypted data email", email)
         const expirationTime = Math.floor(Date.now()) + 600 * 60 * 1000;
-        const userData = await User.findOne({ emailHash:hashEmail(email) })
-                        .select("-emailHash").select("-paymentRefId").select("-paymentRefImg");
-        console.log({userData})
+        const userData = await User.findOne({ emailHash: hashEmail(email) })
+            .select("-emailHash").select("-paymentRefId").select("-paymentRefImg");
+        console.log({ userData })
 
-        if(!userData){
-            return res.status(400).json({message:"User not found"})
+        if (!userData) {
+            return res.status(400).json({ message: "User not found" })
         }
 
         //check if user is pending
-        if(userData.status === "pending"){
-            return res.status(403).json({message : "Your account is pending verification. Please wait for the verification process to complete."})
+        if (userData.status === "pending") {
+            return res.status(403).json({ message: "Your account is pending verification. Please wait for the verification process to complete." })
         }
         //check if user is blocked
-        if(userData.status === "blocked"){
-            return res.status(403).json({message: "Your account has been blocked. Please contact support."})
+        if (userData.status === "blocked") {
+            return res.status(403).json({ message: "Your account has been blocked. Please contact support." })
         }
 
         const isPassword = await bcrypt.compare(password, userData.password);
@@ -155,20 +155,20 @@ export const Login = async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials." });
         }
 
-        
-        userData.email=userData?.email?decrypt(userData.email):null
-        userData.phoneNo=userData?.phoneNo?decrypt(userData.phoneNo):null
-        userData.designation=userData?.designation?decrypt(userData.designation):null
-    console.log( {userData})
+
+        userData.email = userData?.email ? decrypt(userData.email) : null
+        userData.phoneNo = userData?.phoneNo ? decrypt(userData.phoneNo) : null
+        userData.designation = userData?.designation ? decrypt(userData.designation) : null
+        console.log({ userData })
         const token = generateToken(userData);
-    //     res.cookie("loginToken", token, {
-    //     httpOnly: true,
-    //     secure: true,
-    //     sameSite: "none",
-    //     expires: new Date(expirationTime),
-    //     path :"/"
-    //   });
-       return res.status(200).json({ success: true,userData, token, message: "Login successful." });
+        //     res.cookie("loginToken", token, {
+        //     httpOnly: true,
+        //     secure: true,
+        //     sameSite: "none",
+        //     expires: new Date(expirationTime),
+        //     path :"/"
+        //   });
+        return res.status(200).json({ success: true, userData, token, message: "Login successful." });
 
     } catch (error) {
         console.error("login error in login function", error.message);
@@ -178,13 +178,13 @@ export const Login = async (req, res) => {
 
 
 
-export const getHomePageData=async(req,res)=>{
-    try{
-        const{userId}=decodeToken(req)
-        const usersCount=await User.countDocuments({})
+export const getHomePageData = async (req, res) => {
+    try {
+        const { userId } = decodeToken(req)
+        const usersCount = await User.countDocuments({})
 
         const objectUserId = new mongoose.Types.ObjectId(userId);
-        const user=await User.findById(userId).populate("role")
+        const user = await User.findById(userId).populate("role")
         const pendingRequestsCount = await Connection.countDocuments({
             status: "pending",
             $or: [
@@ -192,21 +192,23 @@ export const getHomePageData=async(req,res)=>{
                 { receiver: objectUserId }
             ]
         })
-        console.log("pendingRequestsCount",pendingRequestsCount);
-        const roleAccess=user.role.access
-        let allEvents=[]
-        if(roleAccess.includes("events:read")||roleAccess.includes("*")){
-             allEvents=await EventModel.find({})
+        console.log("pendingRequestsCount", pendingRequestsCount);
+        const roleAccess = user.role.access
+        let allEvents = []
+        if (roleAccess.includes("events:read") || roleAccess.includes("*")) {
+            allEvents = await EventModel.find({})
         }
 
-        res.status(200).json({success:"true",data:{
-            usersCount,allEvents,accesses:roleAccess,pendingRequestsCount
+        res.status(200).json({
+            success: "true", data: {
+                usersCount, allEvents, accesses: roleAccess, pendingRequestsCount
 
-        }})
+            }
+        })
     }
-    catch(error){
-        console.log("Error in getHomePageData",error)
-        return res.status(500).json({message:"Internal Server Error"})
+    catch (error) {
+        console.log("Error in getHomePageData", error)
+        return res.status(500).json({ message: "Internal Server Error" })
     }
 }
 
@@ -345,7 +347,6 @@ export const updateProfile = async (req, res) => {
             updateData.profilepic = uploadResult.secure_url;
         }
 
-
         console.log("Final updateData:", updateData);
 
         const updatedUser = await User.findByIdAndUpdate(
@@ -354,6 +355,9 @@ export const updateProfile = async (req, res) => {
             { new: true, runValidators: true }
         );
 
+        updatedUser.email = updatedUser.email ? decrypt(updatedUser.email) : null;
+        updatedUser.phoneNo = updatedUser.phoneNo ? decrypt(updatedUser.phoneNo) : null;
+        updatedUser.designation = updatedUser.designation ? decrypt(updatedUser.designation) : null;
         res.status(200).json({
             success: true,
             user: updatedUser,

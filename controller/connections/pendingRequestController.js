@@ -12,13 +12,13 @@ export const getPendingRequestsController = async (req, res) => {
                 { receiver: userId }
             ]
         })
-        
 
-        const pendingRequests = pendingRequest.map((user)=>{
-            return{
+
+        const pendingRequests = pendingRequest.map((user) => {
+            return {
                 ...user.toObject(),
-                receiverDesignation: decrypt(user.receiverDesignation),
-                senderDesignation: decrypt(user.senderDesignation)
+                receiverDesignation: user.receiverDesignation ? decrypt(user.receiverDesignation) : null,
+                senderDesignation: user.senderDesignation ? decrypt(user.senderDesignation) : null,
             }
         })
         res.status(200).json({
