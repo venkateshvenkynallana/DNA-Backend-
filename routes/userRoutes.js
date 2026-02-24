@@ -1,7 +1,7 @@
 import express from "express";
 import { checkAuth, forgotPassword, getHomePageData, Login, resetPassword, signUp, updateProfile, verifyOtp } from "../controller/userController.js";
 import upload from "../middleware/multer.js";
-import { getUsersInUserDashboard } from '../controller/getAllUsersController.js';
+import { getUsersInUserDashboard, getViewProfile } from '../controller/getAllUsersController.js';
 import fetchAllEvents from "../controller/events/fetchAllEvents.js";
 import { accessCheck } from "../middleware/accessCheck.js";
 import { getFindDoctorDetails } from "../controller/connections/getFindDoctorDetails.js";
@@ -35,6 +35,8 @@ userRouter.get("/getAllEvents",accessCheck("members:read"),fetchAllEvents)
 //get user finddoctors details
 userRouter.get("/finddoctor", accessCheck("members:read"), getFindDoctorDetails);
 //get user viewprofile
-userRouter.get("/viewprofile/:userId", accessCheck("members: read"), getViewProfileDetails)
+userRouter.get("/viewprofile/:userId", accessCheck("members: read"), getViewProfileDetails);
+//get user details in view profile
+userRouter.get("/getviewprofile/:userId", getViewProfile);
 
 export default userRouter;
