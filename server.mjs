@@ -34,6 +34,7 @@ socketSetup(server,app)
 const allowedOrigins=[
   "https://dna-frontend-eosin.vercel.app",
   "http://localhost:5173",
+  "https://5b483x7x-5173.inc1.devtunnels.ms"
 ]
 app.use(cors({
   origin:allowedOrigins,

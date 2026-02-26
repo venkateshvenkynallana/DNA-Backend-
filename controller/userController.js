@@ -199,13 +199,24 @@ export const getHomePageData = async (req, res) => {
         if(roleAccess.includes("events:read")||roleAccess.includes("*")){
              allEvents=await EventModel.find({}).populate("organisedBy")
         }
+         const decryptedData=allEvents.map(event=>(
+        {
+            ...event.toObject(),
+            organisedBy:{
+                ...event.organisedBy.toObject(),
+            email:event.organisedBy.email?decrypt(event.organisedBy.email):null,
+            phoneNo:event.organisedBy.phoneNo?decrypt(event.organisedBy.phoneNo):null
+        }
+
+        }
+    ))
         const registeredEvents=await RegistrationModel?.find({memberId:userId})
 
         const registeredEventIds=new Set(registeredEvents?.map(event=>event._id.toString()))
-        const eventsWithStatus=allEvents.map(eve=>({
-            ...eve._doc,isRegistered:registeredEventIds.has(`${eve._id.toString()}_._${userId}`)
+        const eventsWithStatus=decryptedData.map(eve=>({
+            ...eve,isRegistered:registeredEventIds.has(`${eve._id.toString()}_._${userId}`)
         }))
-        console.log("events in fetchAllEvntsss",allEvents,eventsWithStatus)
+        console.log("events in fetchAllEvntsss",decryptedData,eventsWithStatus)
 
 
         res.status(200).json({success:"true",data:{
