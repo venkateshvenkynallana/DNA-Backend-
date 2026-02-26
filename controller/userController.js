@@ -356,9 +356,9 @@ export const updateProfile = async (req, res) => {
         }
 
         console.log("Final updateData:", updateData);
-
+        const { userId } = decodeToken(req);
         const updatedUser = await User.findByIdAndUpdate(
-            (req?.body?.userId),
+            userId,
             { $set: updateData },
             { new: true, runValidators: true }
         );
