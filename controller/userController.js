@@ -71,7 +71,7 @@ export const signUp = async (req, res) => {
                         </p>
 
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="https://dna-frontend-eosin.vercel.app?isLogin=true" 
+                            <a href="https://dna-frontend-eosin.vercel.app/landing?isLogin=true" 
                             style="background-color: #4CAF50; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 14px;">
                             Login to Your Account
                             </a>
