@@ -1,6 +1,6 @@
 import express from "express";
 import { adminLogin, adminRegister } from "../controller/adminController.js";
-import { forgotPassword, Login, resetPassword, signUp, verifyOtp } from "../controller/userController.js";
+import { forgotPassword, getProfileDetailsPublic, Login, resetPassword, signUp, verifyOtp } from "../controller/userController.js";
 import { getPaymentUser, paymentController } from "../controller/payments/paymentController.js";
 import upload from "../middleware/multer.js";
 
@@ -30,6 +30,10 @@ authRouter.post("/payment/:userId", upload.fields([
 
 //user get the email
 authRouter.get("/getUserDetails", getPaymentUser)
+
+authRouter.get("/viewProfileDetails", getProfileDetailsPublic);
+
+
 
 // router.get("/getEvents",protectAdminRoute,accessCheck("events:read"),fetchEvents)
 // router.post("/createEvent",protectAdminRoute,accessCheck("events:write"),upload.fields([

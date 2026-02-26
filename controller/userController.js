@@ -519,3 +519,44 @@ export const deRegisterForEvent=async(req,res)=>{
 
     }
 }
+
+
+export const getProfileDetailsPublic = async(req, res)=>{
+    try {
+        // const decoded = decodeToken(req);
+        // const loggedInUserId = decoded.userId;
+
+        const{userName}=req.query
+
+        
+        console.log("loggedInUserName",userName);
+         if(!req.query||req.query===""){
+            return res.status(400).json({ message: "Invalid User Name" });
+        }
+
+
+        // const proccessedUserName=userName.toLowerCase()
+        //                 .trim()
+        //                 .replace(/\s+/g, " ");
+       
+
+
+        const user= await User.findOne({fullName:userName}).select("-password -resetOtp -otpExpire");
+
+        if(!user){
+            return res.status(404).json({message: "User not found Please Enter Correct Name..!"})
+        }
+
+        // console.log({userrrrname:user})
+        const userObj=user.toObject()
+        return res.status(200).json({
+                            ...userObj,
+                            designation:(userObj?.designation)?decrypt(userObj.designation):null,
+                            email: userObj.email ? decrypt(userObj.email) : null,
+                            phoneNo: userObj.phoneNo ? decrypt(userObj.phoneNo) : null,
+                        })
+    } catch (error) {
+        console.log("Error fetching view get profile details public in userController", error);
+        res.status(500).json({ message :"Internal Server Error... !"});
+    }
+}
