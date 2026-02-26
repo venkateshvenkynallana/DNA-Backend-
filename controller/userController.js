@@ -7,6 +7,7 @@ import {decrypt, encrypt, hashEmail} from "../lib/encrypt.js"
 import { EventModel } from "../models/event.js";
 import  Connection  from "../models/Connection.js";
 import mongoose from "mongoose";
+import { RegistrationModel } from "../models/EventsRegistration.js";
 
 
 
@@ -71,7 +72,7 @@ export const signUp = async (req, res) => {
                         </p>
 
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="https://dna-frontend-eosin.vercel.app?isLogin=true" 
+                            <a href="https://dna-frontend-eosin.vercel.app/landing?isLogin=true" 
                             style="background-color: #4CAF50; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 14px;">
                             Login to Your Account
                             </a>
@@ -192,16 +193,23 @@ export const getHomePageData = async (req, res) => {
                 { receiver: objectUserId }
             ]
         })
-        console.log("pendingRequestsCount", pendingRequestsCount);
-        const roleAccess = user.role.access
-        let allEvents = []
-        if (roleAccess.includes("events:read") || roleAccess.includes("*")) {
-            allEvents = await EventModel.find({})
+        console.log("pendingRequestsCount",pendingRequestsCount);
+        const roleAccess=user.role.access
+        let allEvents=[]
+        if(roleAccess.includes("events:read")||roleAccess.includes("*")){
+             allEvents=await EventModel.find({}).populate("organisedBy")
         }
+        const registeredEvents=await RegistrationModel?.find({memberId:userId})
 
-        res.status(200).json({
-            success: "true", data: {
-                usersCount, allEvents, accesses: roleAccess, pendingRequestsCount
+        const registeredEventIds=new Set(registeredEvents?.map(event=>event._id.toString()))
+        const eventsWithStatus=allEvents.map(eve=>({
+            ...eve._doc,isRegistered:registeredEventIds.has(`${eve._id.toString()}_._${userId}`)
+        }))
+        console.log("events in fetchAllEvntsss",allEvents,eventsWithStatus)
+
+
+        res.status(200).json({success:"true",data:{
+            usersCount,allEvents:eventsWithStatus,accesses:roleAccess,pendingRequestsCount
 
             }
         })
@@ -460,5 +468,43 @@ export const resetPassword = async (req, res) => {
     } catch (error) {
         console.log("reset password error", error);
         res.status(500).json({ message: "Internal server error." });
+    }
+}
+
+
+export const registerForEvent=async(req,res)=>{
+    try{
+        const{userId}=decodeToken(req);
+        const{eventId,organiserId}=req.body;
+
+        const response=await RegistrationModel.create({
+            _id:`${eventId}_._${userId}`,
+            memberId:userId,
+            eventId,
+            organiserId})
+        console.log("registration completed succesfully",response);
+        res.status(200).json({message:"Event Registartion Completed!"})
+
+    }
+    catch(error){
+        console.log("Register event error", error);
+        res.status(500).json({ message: "Internal server error." });
+
+    }
+}
+
+export const deRegisterForEvent=async(req,res)=>{
+    try{
+        const{userId}=decodeToken(req);
+        const{eventId,organiserId}=req.body;
+        const response=await RegistrationModel.deleteOne({_id:`${eventId}_._${userId}`})
+        console.log("registration deleted succesfully",response);
+        res.status(200).json({message:"Event De Registartion Completed!"})
+
+    }
+    catch(error){
+        console.log("Register event error", error);
+        res.status(500).json({ message: "Internal server error." });
+
     }
 }

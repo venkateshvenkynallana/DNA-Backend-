@@ -76,7 +76,7 @@ export const sendConnectionRequest = async (req, res) => {
                         Please log in to your account to accept or reject the request.
                     </p>
                     <div style="text-align: center; margin: 35px 0;">
-                        <a href="https://dna-frontend-eosin.vercel.app?isLogin=true" 
+                        <a href="https://dna-frontend-eosin.vercel.app/landing?isLogin=true" 
                         style="
                                 background-color: #4CAF50;
                                 color: #ffffff;

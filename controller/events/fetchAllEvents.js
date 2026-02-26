@@ -1,11 +1,13 @@
 import { decodeToken } from "../../lib/utils.js"
 import { EventModel } from "../../models/event.js"
+import { RegistrationModel } from "../../models/EventsRegistration.js";
 
 
 async function fetchAllEvents(req,res){
     try{
         const{userId}=decodeToken(req)
         const allEvents=await EventModel.find({});
+        
        return res.status(200).json({message:"Data fetched Successfully",data:allEvents})
     }
     catch(err){
