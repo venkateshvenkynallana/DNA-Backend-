@@ -1,11 +1,11 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { decodeToken, generateToken } from "../lib/utils.js";
-import {v2 as cloudinary} from "cloudinary"
+import { v2 as cloudinary } from "cloudinary"
 import resend, { resendSetup } from "../lib/mailer.js";
-import {decrypt, encrypt, hashEmail} from "../lib/encrypt.js"
+import { decrypt, encrypt, hashEmail } from "../lib/encrypt.js"
 import { EventModel } from "../models/event.js";
-import  Connection  from "../models/Connection.js";
+import Connection from "../models/Connection.js";
 import mongoose from "mongoose";
 import { RegistrationModel } from "../models/EventsRegistration.js";
 
@@ -19,7 +19,7 @@ export const checkAuth = async (req, res) => {
 //Sign up form
 export const signUp = async (req, res) => {
 
-    const { fullName, email, password, bio, phoneNo, designation,role } = req.body;
+    const { fullName, email, password, bio, phoneNo, designation, role } = req.body;
 
     try {
         if (!fullName || !email || !password || !phoneNo || !designation) {
@@ -39,14 +39,14 @@ export const signUp = async (req, res) => {
 
         const newUser = await User.create({
             fullName,
-            email:encrypt(email),
+            email: encrypt(email),
             password: hashedPassword,
             bio,
-            phoneNo:encrypt(phoneNo),
-            designation:encrypt(designation),
-            emailHash:hashEmail(email),
-            phoneHash:hashEmail(phoneNo),
-            role:"69906336f94bb4961368eafd",
+            phoneNo: encrypt(phoneNo),
+            designation: encrypt(designation),
+            emailHash: hashEmail(email),
+            phoneHash: hashEmail(phoneNo),
+            role: "69906336f94bb4961368eafd",
             createdBy: null
         });
 
@@ -126,9 +126,9 @@ export const signUp = async (req, res) => {
 export const Login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log({email,password})
-        if(!email||!password){
-            return res.status(400).json({message:"Plase enter all credentials"})
+        console.log({ email, password })
+        if (!email || !password) {
+            return res.status(400).json({ message: "Plase enter all credentials" })
         }
 
         console.log("encrypted data email", email)
@@ -193,34 +193,35 @@ export const getHomePageData = async (req, res) => {
                 { receiver: objectUserId }
             ]
         })
-        console.log("pendingRequestsCount",pendingRequestsCount);
-        const roleAccess=user.role.access
-        let allEvents=[]
-        if(roleAccess.includes("events:read")||roleAccess.includes("*")){
-             allEvents=await EventModel.find({}).populate("organisedBy")
+        console.log("pendingRequestsCount", pendingRequestsCount);
+        const roleAccess = user.role.access
+        let allEvents = []
+        if (roleAccess.includes("events:read") || roleAccess.includes("*")) {
+            allEvents = await EventModel.find({}).populate("organisedBy")
         }
-         const decryptedData=allEvents.map(event=>(
-        {
-            ...event.toObject(),
-            organisedBy:{
-                ...event.organisedBy.toObject(),
-            email:event.organisedBy.email?decrypt(event.organisedBy.email):null,
-            phoneNo:event.organisedBy.phoneNo?decrypt(event.organisedBy.phoneNo):null
-        }
+        const decryptedData = allEvents.map(event => (
+            {
+                ...event.toObject(),
+                organisedBy: {
+                    ...event.organisedBy.toObject(),
+                    email: event.organisedBy.email ? decrypt(event.organisedBy.email) : null,
+                    phoneNo: event.organisedBy.phoneNo ? decrypt(event.organisedBy.phoneNo) : null
+                }
 
-        }
-    ))
-        const registeredEvents=await RegistrationModel?.find({memberId:userId})
+            }
+        ))
+        const registeredEvents = await RegistrationModel?.find({ memberId: userId })
 
-        const registeredEventIds=new Set(registeredEvents?.map(event=>event._id.toString()))
-        const eventsWithStatus=decryptedData.map(eve=>({
-            ...eve,isRegistered:registeredEventIds.has(`${eve._id.toString()}_._${userId}`)
+        const registeredEventIds = new Set(registeredEvents?.map(event => event._id.toString()))
+        const eventsWithStatus = decryptedData.map(eve => ({
+            ...eve, isRegistered: registeredEventIds.has(`${eve._id.toString()}_._${userId}`)
         }))
-        console.log("events in fetchAllEvntsss",decryptedData,eventsWithStatus)
+        console.log("events in fetchAllEvntsss", decryptedData, eventsWithStatus)
 
 
-        res.status(200).json({success:"true",data:{
-            usersCount,allEvents:eventsWithStatus,accesses:roleAccess,pendingRequestsCount
+        res.status(200).json({
+            success: "true", data: {
+                usersCount, allEvents: eventsWithStatus, accesses: roleAccess, pendingRequestsCount
 
             }
         })
@@ -316,21 +317,44 @@ export const updateProfile = async (req, res) => {
         // }
 
         // ===== videos/mediaUpload (parse JSON string) =====
+
+
+        // decode token once so we can also compare with existing user later
+        const { userId: uid } = decodeToken(req);
+        const currentUser = await User.findById(uid);
+
+        // collect urls that the frontend still wants to keep (may be []).
+        const existingImagesToKeep = req.body.existingImages
+            ? (Array.isArray(req.body.existingImages)
+                ? req.body.existingImages
+                : [req.body.existingImages])
+            : [];
+
+        const keptImages = existingImagesToKeep.map(url => ({
+            type: "image",
+            url: url
+        }));
+
+        // parse any videos sent in the mediaUpload field
+        const finalMediaUpload = [];
         if (req.body.mediaUpload) {
             try {
                 const videos = Array.isArray(req.body.mediaUpload)
                     ? req.body.mediaUpload
                     : [req.body.mediaUpload];
 
-                updateData["profile.mediaUpload"] = videos.map(v =>
+                const parsedVideos = videos.map(v =>
                     typeof v === "string" ? JSON.parse(v) : v
                 );
+
+                finalMediaUpload.push(...parsedVideos);
             } catch (e) {
                 console.error("Error parsing videos:", e);
             }
         }
 
-        // ===== gallery images (AFTER videos) =====
+
+        finalMediaUpload.push(...keptImages);
         if (req.files?.mediaUploadImages) {
             const uploadedImages = [];
 
@@ -346,14 +370,35 @@ export const updateProfile = async (req, res) => {
                 });
             }
 
-            updateData["profile.mediaUpload"] = [
-                ...(updateData["profile.mediaUpload"] || []),
-                ...uploadedImages
-            ];
+            finalMediaUpload.push(...uploadedImages);
         }
 
+        if (finalMediaUpload.length) {
+            updateData["profile.mediaUpload"] = finalMediaUpload;
+        }
 
-
+        // --- optional: delete removed images from cloudinary
+        // compute which urls were dropped so the frontend and DB stay in sync
+        const previousImages = (currentUser?.profile?.mediaUpload || [])
+            .filter(m => m.type === "image")
+            .map(m => m.url);
+        const removedUrls = previousImages.filter(u => !existingImagesToKeep.includes(u));
+        if (removedUrls.length) {
+            // simple helper to extract public_id from a Cloudinary URL
+            const extractPublicId = url => {
+                const parts = url.split("/");
+                const filename = parts.pop().split(".")[0];
+                return parts.slice(parts.indexOf("upload") + 1).concat(filename).join("/");
+            };
+            for (const url of removedUrls) {
+                try {
+                    const publicId = extractPublicId(url);
+                    await cloudinary.uploader.destroy(publicId);
+                } catch (e) {
+                    console.warn("failed to remove cloudinary image", url, e.message);
+                }
+            }
+        }
 
         // ===== profile picture upload =====
         if (req.files?.profilepic && req.files.profilepic.length > 0) {
@@ -367,9 +412,9 @@ export const updateProfile = async (req, res) => {
         }
 
         console.log("Final updateData:", updateData);
-        const { userId } = decodeToken(req);
+        // we already decoded the token earlier and stored it in `uid`
         const updatedUser = await User.findByIdAndUpdate(
-            userId,
+            uid,
             { $set: updateData },
             { new: true, runValidators: true }
         );
@@ -483,37 +528,38 @@ export const resetPassword = async (req, res) => {
 }
 
 
-export const registerForEvent=async(req,res)=>{
-    try{
-        const{userId}=decodeToken(req);
-        const{eventId,organiserId}=req.body;
+export const registerForEvent = async (req, res) => {
+    try {
+        const { userId } = decodeToken(req);
+        const { eventId, organiserId } = req.body;
 
-        const response=await RegistrationModel.create({
-            _id:`${eventId}_._${userId}`,
-            memberId:userId,
+        const response = await RegistrationModel.create({
+            _id: `${eventId}_._${userId}`,
+            memberId: userId,
             eventId,
-            organiserId})
-        console.log("registration completed succesfully",response);
-        res.status(200).json({message:"Event Registartion Completed!"})
+            organiserId
+        })
+        console.log("registration completed succesfully", response);
+        res.status(200).json({ message: "Event Registartion Completed!" })
 
     }
-    catch(error){
+    catch (error) {
         console.log("Register event error", error);
         res.status(500).json({ message: "Internal server error." });
 
     }
 }
 
-export const deRegisterForEvent=async(req,res)=>{
-    try{
-        const{userId}=decodeToken(req);
-        const{eventId,organiserId}=req.body;
-        const response=await RegistrationModel.deleteOne({_id:`${eventId}_._${userId}`})
-        console.log("registration deleted succesfully",response);
-        res.status(200).json({message:"Event De Registartion Completed!"})
+export const deRegisterForEvent = async (req, res) => {
+    try {
+        const { userId } = decodeToken(req);
+        const { eventId, organiserId } = req.body;
+        const response = await RegistrationModel.deleteOne({ _id: `${eventId}_._${userId}` })
+        console.log("registration deleted succesfully", response);
+        res.status(200).json({ message: "Event De Registartion Completed!" })
 
     }
-    catch(error){
+    catch (error) {
         console.log("Register event error", error);
         res.status(500).json({ message: "Internal server error." });
 
