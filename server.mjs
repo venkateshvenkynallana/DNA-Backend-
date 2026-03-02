@@ -50,7 +50,7 @@ await connectDB();
 app.use(express.json({limit: "4mb"}));
 
 //routes  
-app.use("/api/status", (req, res) => {
+app.get("/", (req, res) => {
   res.send("Server in live");
 });
 app.use("/api/user",protectUserRoute, userRouter);  
