@@ -3,6 +3,7 @@ import { adminLogin, adminRegister } from "../controller/adminController.js";
 import { forgotPassword, getProfileDetailsPublic, Login, resetPassword, signUp, verifyOtp } from "../controller/userController.js";
 import { getPaymentUser, paymentController } from "../controller/payments/paymentController.js";
 import upload from "../middleware/multer.js";
+import { getViewProfile } from "../controller/getAllUsersController.js";
 
 
 export const authRouter=express.Router()
@@ -33,6 +34,7 @@ authRouter.get("/getUserDetails", getPaymentUser)
 
 authRouter.get("/viewProfileDetails", getProfileDetailsPublic);
 
+authRouter.get("/getviewprofile/:userId", getViewProfile);
 
 
 // router.get("/getEvents",protectAdminRoute,accessCheck("events:read"),fetchEvents)
