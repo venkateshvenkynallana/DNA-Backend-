@@ -6,6 +6,7 @@ import fetchAllEvents from "../controller/events/fetchAllEvents.js";
 import { accessCheck } from "../middleware/accessCheck.js";
 import { getFindDoctorDetails } from "../controller/connections/getFindDoctorDetails.js";
 import { getViewProfileDetails } from "../controller/connections/getViewProfileDetails.js";
+import { likeUserProfile } from "../controller/likesController.js";
 
 const userRouter = express.Router();
 
@@ -42,5 +43,12 @@ userRouter.get("/getviewprofile/:userId", getViewProfile);
 
 userRouter.get("/getAllEvents",accessCheck("members:read"),fetchAllEvents)
 userRouter.post("/registerEvent",accessCheck("events:update"),registerForEvent)
+
+//put likes update
+userRouter.post("/likeUserProfile/:userId", likeUserProfile)
+//get view profile likes 
+// userRouter.get("/userLikes/:userId", getProfileLikes )
+//post remove like
+// userRouter.post("/removeLike/:userId", deleteLike)
 
 export default userRouter;
