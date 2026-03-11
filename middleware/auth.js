@@ -20,7 +20,11 @@ export const protectUserRoute = async(req, res, next) => {
         next();
 
     } catch (error) {
+
         console.error("protect route error", error.message);
+        if(error.message==="jwt expired"){
+            return res.status(401).json({ message: "Session Expired"}); 
+        }
         return res.status(401).json({ message: "Internal Server Error"});
     }
 }

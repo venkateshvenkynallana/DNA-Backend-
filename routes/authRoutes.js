@@ -36,6 +36,12 @@ authRouter.get("/viewProfileDetails", getProfileDetailsPublic);
 
 authRouter.get("/getviewprofile/:userId", getViewProfile);
 
+authRouter.post("/signOut",(req,res)=>{
+    res.clearCookie("loginToken")
+    res.status(200).json({ message: "Logged out successfully" });
+
+})
+
 
 // router.get("/getEvents",protectAdminRoute,accessCheck("events:read"),fetchEvents)
 // router.post("/createEvent",protectAdminRoute,accessCheck("events:write"),upload.fields([

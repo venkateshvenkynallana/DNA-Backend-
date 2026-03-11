@@ -169,7 +169,13 @@ export const Login = async (req, res) => {
         //     expires: new Date(expirationTime),
         //     path :"/"
         //   });
-        return res.status(200).json({ success: true, userData, token, message: "Login successful." });
+        return res.status(200).cookie("loginToken", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            expires: new Date(expirationTime),
+            path :"/"
+          }).json({ success: true, userData, token, message: "Login successful." });
 
     } catch (error) {
         console.error("login error in login function", error.message);

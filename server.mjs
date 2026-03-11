@@ -19,6 +19,7 @@ import connectRouter from "./routes/connectRoutes.js";
 import dns from 'node:dns/promises';
 import { socketSetup } from "./lib/socket.js";
 import { Server } from "socket.io";
+import cookieParser from "cookie-parser";
 
 dns.setServers(['1.1.1.1', '1.0.0.1']);
 
@@ -42,12 +43,15 @@ app.use(cors({
   credentials:true
 }))
 
+app.use(express.json({limit: "4mb"}));
+
+app.use(cookieParser())
+
 //connect to mongoDB
 await connectDB();
 // updateFields()
 
 
-app.use(express.json({limit: "4mb"}));
 
 //routes  
 app.get("/", (req, res) => {
