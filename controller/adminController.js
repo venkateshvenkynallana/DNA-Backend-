@@ -84,10 +84,16 @@ export const adminLogin = async (req, res) => {
         //generate token
 
         const token = generateToken(AdminMail);
+                const expirationTime = Math.floor(Date.now()) + 600 * 60 * 1000;
 
-        res.status(200).json({
+        res.status(200).cookie("loginToken", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            expires: new Date(expirationTime),
+            path :"/"
+          }).json({
             success: true,
-            token,
             message: "Admin logged in successful."
         });
     } catch (error) {
