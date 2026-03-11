@@ -222,7 +222,7 @@ export const getHomePageData = async (req, res) => {
         const eventsWithStatus = decryptedData.map(eve => ({
             ...eve, isRegistered: registeredEventIds.has(`${eve._id.toString()}_._${userId}`)
         }))
-        console.log("events in fetchAllEvntsss", decryptedData, eventsWithStatus)
+        // console.log("events in fetchAllEvntsss", decryptedData, eventsWithStatus)
 
 
         res.status(200).json({
@@ -539,12 +539,25 @@ export const registerForEvent = async (req, res) => {
         const { userId } = decodeToken(req);
         const { eventId, organiserId } = req.body;
 
-        const response = await RegistrationModel.create({
+        const session=await mongoose.startSession()
+
+        const existingRegistrations=await RegistrationModel.countDocuments({_id:`${eventId}_._${userId}`},{limit:1})
+
+        if(existingRegistrations>0){
+            return res.status(409).json({message:"Already Registered"})
+        }
+
+        const response = await RegistrationModel.insertOne({
             _id: `${eventId}_._${userId}`,
             memberId: userId,
             eventId,
             organiserId
-        })
+        },{session})
+
+        const eventUpdate=await EventModel.updateOne({_id:eventId},{
+            $inc:{noOfAttendees:1}
+        },{session})
+        console.log("event atteddee count incresed",eventUpdate)
         console.log("registration completed succesfully", response);
         res.status(200).json({ message: "Event Registartion Completed!" })
 
