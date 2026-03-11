@@ -175,7 +175,7 @@ export const Login = async (req, res) => {
             sameSite: "none",
             expires: new Date(expirationTime),
             path :"/"
-          }).json({ success: true, userData, token, message: "Login successful." });
+          }).json({ success: true, userData, message: "Login successful." });
 
     } catch (error) {
         console.error("login error in login function", error.message);
