@@ -10,7 +10,7 @@ import User from "../../models/User.js";
 export const sendConnectionRequest = async (req, res) => {
     try {
 
-        const { userId } = await decodeToken(req);
+        const { userId ,fullName} = await decodeToken(req);
         const senderId = userId;
         const { receiverId } = req.body;
 
@@ -19,6 +19,21 @@ export const sendConnectionRequest = async (req, res) => {
         if(senderId === receiverId) {
             return res.status(400).json({ message: "You cannot send a connection request to yourself." });
         }
+
+        const io=getIO()
+
+        const data={
+                    notificationType:"Request Sent",      
+                    notificationBy:senderId,
+                    notificationTo:receiverId,
+                    notificationMessage:`${fullName} has Sent you a friend request`
+                    }
+                
+                        const recieverSocketId=onlineUsers.get(receiverId.toString())
+                        console.log("recievreeeeee",recieverSocketId)
+                        if(recieverSocketId) io.to(recieverSocketId).emit("notification",data)
+                        const notifyResponse=await Notification.insertOne(data)
+                        console.log("Notifyyyyyy responseeee",notifyResponse)
 
         const senderUser = await User.findById(senderId);
         const receiverUser = await User.findById(receiverId);
