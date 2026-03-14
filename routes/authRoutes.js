@@ -37,7 +37,10 @@ authRouter.get("/viewProfileDetails", getProfileDetailsPublic);
 authRouter.get("/getviewprofile/:userId", getViewProfile);
 
 authRouter.post("/signOut",(req,res)=>{
-    res.clearCookie("loginToken")
+    res.clearCookie("loginToken",{httpOnly: true,
+  secure: true, 
+  sameSite: "none", 
+  path: "/"})
     res.status(200).json({ message: "Logged out successfully" });
 
 })
