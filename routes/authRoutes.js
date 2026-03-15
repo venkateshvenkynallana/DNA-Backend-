@@ -4,6 +4,7 @@ import { forgotPassword, getProfileDetailsPublic, Login, resetPassword, signUp, 
 import { getPaymentUser, paymentController } from "../controller/payments/paymentController.js";
 import upload from "../middleware/multer.js";
 import { getViewProfile } from "../controller/getAllUsersController.js";
+import { decodeToken } from "../lib/utils.js";
 
 
 export const authRouter=express.Router()
@@ -43,6 +44,22 @@ authRouter.post("/signOut",(req,res)=>{
   path: "/"})
     res.status(200).json({ message: "Logged out successfully" });
 
+})
+
+authRouter.get("/authCheck",(req,res)=>{
+    try{
+        const {userId}=decodeToken(req) || {userId:null}
+
+        if(!userId){
+            res.status(401).json({message:"You Are Not Authenticated"})
+        }
+
+        res.status(200).json({message:"Authorization Successfull"})
+    }
+    catch(error){
+        console.log("Error in Auth Check in userRoutes",error)
+        res.status(500).json({message:"UnAuthorized"})
+    }
 })
 
 
