@@ -16,21 +16,7 @@ userRouter.get("/check", checkAuth);
 
 userRouter.get("/homePageData",getHomePageData)
 
-userRouter.get("/authCheck",(req,res)=>{
-    try{
-        const {userId}=decodeToken(req)
 
-        if(!userId){
-            res.status(401).json({message:"You Are Not Authenticated"})
-        }
-
-        res.status(200).json({message:"Authorization Successfull"})
-    }
-    catch(error){
-        console.log("Error in Auth Check in userRoutes",error)
-        res.status(500).json({message:"UnAuthorized"})
-    }
-})
 
 
 userRouter.put(
