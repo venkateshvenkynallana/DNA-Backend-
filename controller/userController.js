@@ -446,9 +446,9 @@ export const updateProfile = async (req, res) => {
 export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
-
-        const user = await User.findOne({ email });
-        
+        const hashedMail = hashEmail(email);
+        const user = await User.findOne({ emailHash: hashedMail }).select("-emailHash");
+                
         if (!user) {
             return res.status(404).json({ message: "User not found Create a new account" });
         }
@@ -468,7 +468,7 @@ export const forgotPassword = async (req, res) => {
         };
 
 
-        await resend.emails.send({
+        await resendSetup().emails?.send({
             from: "dna-support@dna.hi9.in",
             to: email,
             subject: mailOptions.subject,
@@ -487,9 +487,8 @@ export const forgotPassword = async (req, res) => {
 export const verifyOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
-
-        const user = await User.findOne({ email });
-
+        const user = await User.findOne({ emailHash: hashEmail(email) });
+        
         if (
             !user ||
             user.resetOtp !== Number(otp) ||
@@ -513,7 +512,7 @@ export const resetPassword = async (req, res) => {
 
         const { email, newPassword } = req.body;
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ emailHash: hashEmail(email) });
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
