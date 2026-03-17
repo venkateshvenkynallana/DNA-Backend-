@@ -13,7 +13,7 @@ import crypto from "crypto"
 import cloudinarySetup from "./lib/cloudinary.js";
 import resendSetup from "./lib/mailer.js";
 import User from "./models/User.js";
-import { protectAdminRoute, protectUserRoute } from "./middleware/auth.js";
+import { protectUserRoute } from "./middleware/auth.js";
 import connectRouter from "./routes/connectRoutes.js";
 // import { connectEncrypted, createKey } from "./lib/encrypt.js";
 import dns from 'node:dns/promises';
@@ -52,13 +52,18 @@ await connectDB();
 // updateFields()
 
 
-
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next();
+});
 //routes  
 app.get("/", (req, res) => {
   res.send("Server in live");
 });
 app.use("/api/user",protectUserRoute, userRouter);  
-app.use("/api/admin",protectAdminRoute, adminRouter);
+app.use("/api/admin",protectUserRoute, adminRouter);
 // app.use("/api", routes);
 
 //connect network route

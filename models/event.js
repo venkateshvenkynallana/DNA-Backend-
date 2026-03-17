@@ -20,7 +20,7 @@ const mediaSchema=new mongoose.Schema({
 const eventSchema= new mongoose.Schema({
         organisedBy:{
             type:mongoose.Schema.Types.ObjectId,
-            ref:"Admin",
+            ref:"User",
             required:true
         },
         eventName:{

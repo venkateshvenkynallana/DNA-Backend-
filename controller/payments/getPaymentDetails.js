@@ -7,7 +7,7 @@ import User from "../../models/User.js"
 export const getPaymentDetails = async (req, res) => {
     try {
         const { userId } = decodeToken(req)
-        const admin = await Admin.findById(userId);
+        const admin = await User.findById(userId);
 
         if (!admin) {
             return res.status(404).json({ message: "Admin not found" });

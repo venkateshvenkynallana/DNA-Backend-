@@ -8,6 +8,7 @@ import { EventModel } from "../models/event.js";
 import Connection from "../models/Connection.js";
 import mongoose from "mongoose";
 import { RegistrationModel } from "../models/EventsRegistration.js";
+import RoleModel from "../models/Roles.js";
 
 
 
@@ -37,6 +38,9 @@ export const signUp = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        const memberRole=await RoleModel.findOne({roleName:"member"});
+        // console.log("member ROleeee",memberRole);
+
         const newUser = await User.create({
             fullName,
             email: encrypt(email),
@@ -46,7 +50,7 @@ export const signUp = async (req, res) => {
             designation: encrypt(designation),
             emailHash: hashEmail(email),
             phoneHash: hashEmail(phoneNo),
-            role: "69906336f94bb4961368eafd",
+            role: memberRole?._id.toString(),
             createdBy: null
         });
 
@@ -133,9 +137,9 @@ export const Login = async (req, res) => {
 
         console.log("encrypted data email", email)
         const expirationTime = Math.floor(Date.now()) + 600 * 60 * 1000;
-        const userData = await User.findOne({ emailHash: hashEmail(email) })
+        const userData = await User.findOne({ emailHash: hashEmail(email) }).populate("role")
             .select("-emailHash").select("-paymentRefId").select("-paymentRefImg");
-        console.log({ userData })
+        // console.log({ userData })
 
         if (!userData) {
             return res.status(400).json({ message: "User not found" })
@@ -149,6 +153,14 @@ export const Login = async (req, res) => {
         if (userData.status === "blocked") {
             return res.status(403).json({ message: "Your account has been blocked. Please contact support." })
         }
+
+        
+
+       const loginAccess=["superadmin","member"]
+        if(userData.role.dashboardAccess!=="member"){
+            return res.status(401).json({message:"You Not Authorised To Login Here."})
+        }
+
 
         const isPassword = await bcrypt.compare(password, userData.password);
 
@@ -209,7 +221,7 @@ export const getHomePageData = async (req, res) => {
             {
                 ...event.toObject(),
                 organisedBy: {
-                    ...event.organisedBy.toObject(),
+                    ...event?.organisedBy.toObject(),
                     email: event.organisedBy.email ? decrypt(event.organisedBy.email) : null,
                     phoneNo: event.organisedBy.phoneNo ? decrypt(event.organisedBy.phoneNo) : null
                 }
