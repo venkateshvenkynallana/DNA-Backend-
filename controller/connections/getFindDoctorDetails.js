@@ -36,7 +36,8 @@ export const getFindDoctorDetails = async(req, res)=>{
                     connectionStatus: status,
                     _id: user?._id,
                 };  
-            });
+            }).filter(user => user.connectionStatus !== "pending" && user.connectionStatus !=="accepted");
+            
             console.log("decryptedData",decryptedData)
             res.status(200).json({
                 success: true,
