@@ -1,5 +1,4 @@
 import bcrypt from "bcryptjs";
-import Admin from "../models/Admin.js";
 import { decodeToken, generateToken } from "../lib/utils.js";
 import RoleModel from "../models/Roles.js";
 import User from "../models/User.js";
@@ -19,7 +18,7 @@ export const adminRegister = async( req, res) =>{
             return res.status(400).json({message: "All fields are required"});
         }
 
-        const existingAdmin = await admin.findOne({ emailhash:hashEmail(email) });
+        const existingAdmin = await User.findOne({ emailhash:hashEmail(email) });
 
         if(existingAdmin) {
             return res.status(400).json({message: "Admin already exists"});
@@ -28,12 +27,14 @@ export const adminRegister = async( req, res) =>{
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newAdmin = await Admin.create({
+        const memberRole=await RoleModel.findOne({roleName:"member"}); 
+
+        const newAdmin = await User.create({
             fullName:name,
             email:encrypt(email),
             emailHash:hashEmail(email),
             password: hashedPassword,
-            role: "admin"
+            role: memberRole.roleId.toString()
         });
 
         const token = generateToken(newAdmin._id);
@@ -68,14 +69,20 @@ export const adminLogin = async (req, res) => {
 
 
         //find admin
-        const AdminMail = await Admin.findOne({emailHash:hashEmail(email)});
+        const userData = await User.findOne({emailHash:hashEmail(email)}).populate("role");
 
-        if(!AdminMail) {
-            return res.status(404).json({success:false,message: "Admin not found"});
+        if(!userData) {
+            return res.status(404).json({success:false,message: "User not found"});
+        }
+
+        console.log("userData in admin login",userData)
+        const loginAccess=["superadmin","admin"]
+        if(!loginAccess.includes(userData.role.roleName)||userData.role.dashBoard==="member"){
+            return res.status(401).json({message:"You Not Authorised To Login Here."})
         }
 
         //compare password
-        const isPasswordMatch =  await bcrypt.compare(password, AdminMail.password);
+        const isPasswordMatch =  await bcrypt.compare(password, userData.password);
 
         if(!isPasswordMatch) {
             return res.status(401).json({success:false,message: "Invalid credentials"});
@@ -83,7 +90,7 @@ export const adminLogin = async (req, res) => {
 
         //generate token
 
-        const token = generateToken(AdminMail);
+        const token = generateToken(userData);
                 const expirationTime = Math.floor(Date.now()) + 600 * 60 * 1000;
 
         res.status(200).cookie("loginToken", token, {
@@ -106,12 +113,12 @@ export async function getHomePageData(req,res){
     try{
         const{userId}=decodeToken(req)
     //    console.log("user id in getHomePageData",userId)
-            const user=await Admin?.findById(userId)?.populate("role")
+            const user=await User?.findById(userId)?.populate("role")
             // console.log("user in getHomePgae",user)
             const accessList=user?.role?.access
 
             const members=await User?.find({});
-            const adminsCreated=await Admin?.find({createdBy:userId})
+            const adminsCreated=await User?.find({createdBy:userId})
             // console.log("accessList",accessList)
             
             const membersCreated=members?.filter(mem=>mem.createdBy===userId)
@@ -128,11 +135,11 @@ export async function getHomePageData(req,res){
 
 export async function addUser(req,res){
     try{
-        const { fullName, email, password, bio, phoneNo,roleId,dashboardAccess } = req.body;
+        const { fullName, email, password, bio, phoneNo,roleId } = req.body;
 
         const{userId}=decodeToken(req)
 
-        if (!fullName || !email || !password || !phoneNo ||!roleId||!dashboardAccess) {
+        if (!fullName || !email || !password || !phoneNo ||!roleId) {
             return res.status(400).json({ message: "fields are missing." });
         }
 
@@ -152,31 +159,15 @@ export async function addUser(req,res){
             phoneHash:hashEmail(phoneNo),
             role:roleId,
             paymentStatus:"special",
-            createdBy:userId
+            createdBy:userId,
+            bio
         }
-
-        
-
-        if(dashboardAccess==="admin"){
-
-            const user = await Admin.findOne({ $or: [{ emailhash: hashEmail(email) }, { phoneHash: hashEmail(phoneNo) }] });
-            if (user) {
-                return res.status(409).json({ message: "User already exists." });
-            }
-            newUser=await Admin.create(userData)
-
-        }
-        else if(dashboardAccess==="member"){
-        
             const user = await User.findOne({ $or:[{emailhash:hashEmail(email)},{phoneHash:hashEmail(phoneNo)}] });
             if (user) {
                 return res.status(409).json({ message: "User already exists." });
             }
             newUser = await User.create(userData);
-        }
-        else{
-            return res.status(400).json({message:"dashBoardAccess is required"})
-        }
+       
 
         // mail sending logic 
         const mailSend = {
@@ -255,7 +246,6 @@ export async function getAllUsersByAdmin(req,res){
     try{
         const {userId}=decodeToken(req)
         const allUsers=await User.find({createdBy:userId}).populate("role")
-        const allAdmins=await Admin.find({createdBy:userId}).populate("role")
         // console.log("all users in getAllUsersByAdmin",allUsers)
         const decryptedUsers=allUsers.map(user=>({
             ...user.toObject(),
@@ -263,12 +253,8 @@ export async function getAllUsersByAdmin(req,res){
             phoneNo:decrypt(user?.phoneNo),
             
         }))
-        const decryptedAdmins=allAdmins.map(admin=>({
-            ...admin.toObject(),
-            email:decrypt(admin?.email),
-            phoneNo:decrypt(admin?.phoneNo)
-        }))
-        return res.status(200).json({message:"Data fetched Sucefully",data:[...decryptedUsers,...decryptedAdmins]})
+        
+        return res.status(200).json({message:"Data fetched Sucefully",data:[...decryptedUsers]})
 
     }
     catch(error){
@@ -280,29 +266,24 @@ export async function getAllUsersByAdmin(req,res){
 export async function updateUser(req,res){
     try{
         const {userId}=decodeToken(req);
-        const {id, fullName, email, password, bio, phoneNo,roleId,dashboardAccess } = req.body;
+        const {id, fullName, email, bio, phoneNo,roleId } = req.body;
          const userData={
             fullName,
             email:encrypt(email),
             emailHash:hashEmail(email),
             phoneNo:encrypt(phoneNo),
             phoneHash:hashEmail(phoneNo),
-            role:roleId
+            role:roleId,
+            bio
         }
         console.log("usersData in updateUser",userData)
         const response=await User.updateOne({_id:id},{
             $set:userData
-        })
-        let admResponse
+        })       
         if(response.matchedCount===0){
-             admResponse=await Admin.updateOne({_id:id},{
-           $set: userData
-        })        }
-       
-        if(response.matchedCount===0 && admResponse.matchedCount===0){
             return res.status(404).json({message:"User Not found"})
         }
-        console.log("respnseesss",response,admResponse)
+        console.log("respnseesss",response)
 
         return res.status(200).json({message:"User role updated Updated!"})
     }
@@ -347,7 +328,7 @@ export const deleteUser = async (req, res) => {
 
         let admResponse
         if(!(response.matchedCount)){
-         admResponse=await Admin.deleteOne({_id:id}) 
+         admResponse=await User.deleteOne({_id:id}) 
         }
        
         if(response.matchedCount===0 && admResponse.matchedCount===0){
@@ -415,7 +396,6 @@ export async function getRoles(req,res){
     try{
         const{userId}=decodeToken(req);
         const roles=await RoleModel.find({
-            createdBy:{ $in:[userId,null]},
             roleName:{$nin:["superadmin"]}
         })
         // console.log({roles})
@@ -454,20 +434,20 @@ export async function getOneRole(req,res){
 export async function addRole(req,res){
     try{
         const{userId}=decodeToken(req)
-        const{role,access,description}=req.body
+        const{role,access,description,dashboardAccess}=req.body
         if(!role||!access){
             return res.status(400).json({message:"Please Enter all required Details"})
         }
         const existingRole=await RoleModel.find({
             roleName:role?.toLowerCase()?.trim(),
-            createdBy:userId
+            createdBy:userId,
         })
         console.log({role,existingRole})
         if(existingRole.length>0){
             return res.status(409).json({message:"Role already exists!"})
         }
         const response=await RoleModel.insertOne({
-            roleName:role,access,createdBy:userId,description
+            roleName:role,access,createdBy:userId,description,dashboardAccess
         })
 
         console.log("Role is Added",response)
@@ -485,12 +465,13 @@ export async function updateRole(req,res){
     try{
         const {userId}=decodeToken(req);
         const{roleId}=req.params
-        const{roleName,access}=req.body;
+        const{roleName,access,dashboardAccess}=req.body;
         const response=await RoleModel.updateOne({
             _id:roleId
         },{
             roleName,
-            access
+            access,
+            dashboardAccess
         })
         if(!response.matchedCount){
             return res.status(404).json({message:"Role Not found"})
@@ -517,12 +498,11 @@ export async function deleteRole(req,res){
         const defaultRoleIds=["69906336f94bb4961368eafd","699817875af680520f78ab7a"]
         
         if(defaultRoleIds.includes(roleId)){
-            return res.status(400).json({message:"This Role Is Default You cant delete it"})    
+            return res.status(400).json({message:"This Role Is Default You can't delete."})    
             
         }
         const response=await RoleModel.deleteOne({
             _id: new mongoose.Types.ObjectId(roleId),
-            createdBy:new mongoose.Types.ObjectId(userId)
         },{session})
 
 // console.log("Searching for Role ID:", roleId, "Type:", typeof roleId);

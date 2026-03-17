@@ -9,6 +9,11 @@ const schema=new Schema({
     description:{
         type:String
     },
+    dashboardAccess:{
+        type:String,
+        required:true,
+        default:null
+    },
     createdBy:{
         type:String,
         required:true
